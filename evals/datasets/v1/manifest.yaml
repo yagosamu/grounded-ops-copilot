@@ -1,0 +1,21 @@
+dataset_id: groundedops-otel-v1
+version: 1
+license: Apache-2.0
+sources:
+  - id: otel-tracing-api
+    url: https://opentelemetry.io/docs/specs/otel/trace/api/
+    license: Apache-2.0
+    fixture: sources/tracing-api.md
+    evidence_span: "`TracerProvider` provides access to `Tracer`s"
+  - id: otel-resource
+    url: https://opentelemetry.io/docs/specs/otel/resource/
+    license: Apache-2.0
+    fixture: sources/resource.md
+    evidence_span: "Resource represents the entity producing telemetry"
+golden_questions:
+  - id: tracing-components
+    question: Which OpenTelemetry component provides access to tracers?
+    evidence_source_id: otel-tracing-api
+  - id: resource-entity
+    question: What does an OpenTelemetry Resource represent?
+    evidence_source_id: otel-resource

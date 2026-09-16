@@ -171,7 +171,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Gate**: Full.
 **Commit**: `feat(health): expose liveness and readiness`
 
-### T06: Seed the versioned evaluation corpus
+### T06: Seed the versioned evaluation corpus [x]
 
 **What**: Add the first licensed corpus fixtures, golden questions and dataset manifest.
 **Where**: `evals/datasets/v1/manifest.yaml`
