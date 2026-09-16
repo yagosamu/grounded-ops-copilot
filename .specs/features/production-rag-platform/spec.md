@@ -142,7 +142,7 @@ The acceptance criteria below define the testable behavior of each story.
 
 | Requirement ID | Capability | Status |
 | --- | --- | --- |
-| FND-01 | Reproducible foundation and gates | In progress: bootstrap complete (T01) |
+| FND-01 | Reproducible foundation and gates | In progress: bootstrap and checker configuration complete (T01-T03) |
 | ING-01 | Idempotent ingestion | Pending |
 | ING-02 | Versioning and provenance | Pending |
 | RET-01 | Authorized BM25 baseline | Pending |
@@ -155,7 +155,7 @@ The acceptance criteria below define the testable behavior of each story.
 | AGT-02 | Agent promotion benchmark | Pending |
 | OPS-01 | Observability and degraded modes | Pending |
 | OPS-02 | Reindex and recovery | Pending |
-| REL-01 | Pre-push and release gates | In progress: local gates complete (T02) |
+| REL-01 | Pre-push and release gates | In progress: local gates and checker configuration complete (T02-T03) |
 
 ## Success Criteria
 

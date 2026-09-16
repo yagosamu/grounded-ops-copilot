@@ -23,3 +23,37 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/grounded_ops"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+    "unit: isolated behavior tests",
+    "integration: tests requiring local infrastructure",
+    "api: HTTP interface tests",
+    "retrieval_eval: offline retrieval evaluation tests",
+    "answer_eval: offline grounded-answer evaluation tests",
+    "agentic: bounded investigation tests",
+    "security: adversarial security tests",
+    "operational: load, recovery, and operational tests",
+]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["grounded_ops"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

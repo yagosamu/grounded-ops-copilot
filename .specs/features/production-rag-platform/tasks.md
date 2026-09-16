@@ -138,7 +138,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Gate**: Build.
 **Commit**: `build(quality): add canonical verification gates`
 
-### T03: Configure lint, typing and test markers
+### T03: Configure lint, typing and test markers [x]
 
 **What**: Configure Ruff, strict MyPy, Pytest markers and coverage reporting.
 **Where**: `pyproject.toml`
