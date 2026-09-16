@@ -265,7 +265,7 @@ Adequacy A-D: PASS. Real PostgreSQL, observable values, no internal mocks or
 weakened tests. Contract: `CONSTRAINTS.md` and coverage matrix. Exact promotion
 tie-break is a spec-precision choice; no requirement was dropped.
 
-### T09: Store immutable document artifacts
+### T09: Store immutable document artifacts [x]
 
 **What**: Implement content-addressed raw and normalized artifact storage.
 **Where**: `src/adapters/object_store/document_store.py`
@@ -275,6 +275,29 @@ tie-break is a spec-precision choice; no requirement was dropped.
 **Tests**: object-store integration tests.
 **Gate**: Full.
 **Commit**: `feat(ingestion): store immutable document artifacts`
+
+**Evidence**: `make test` passed, 97 tests. Public seam: `DocumentStore.put/get`
+against real MinIO. Files: object-store adapter/tests, integration fixture/Compose,
+dependencies, task/spec status. Assumptions: SHA-256 keys, 10 MiB artifact limit,
+conditional creation; both raw and normalized artifacts are verified on every read.
+Conditional writes follow the [S3 PutObject contract](https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/put_object.html).
+
+| Criterion | Evidence in `tests/integration/test_document_store.py` | Outcome |
+| --- | --- | --- |
+| Identical content | 21 exact SHA-256 literal; 25 `original.key == f"alpha/{kind}/{original.digest}"`; 26 `store.put(...) == original`; 27 `store.get(...) == b"abc"` | Verified content address, both artifact kinds |
+| Corrupt/missing | 36,38 `pytest.raises(ArtifactError, match="artifact integrity failed")`; 53 `pytest.raises(ArtifactError, match="artifact unavailable")` | Failed verification, no repair by overwrite |
+| Tenant isolation | 48 `alpha.key != beta.key`; 49 byte equality; 50 unavailable error; 75 invalid-reference error | Separate prefixes, forged refs rejected |
+| Dependency/bounds | 60 exact safe error; 61 `"private" not in str(error.value)`; 82 size-limit error | Redacted failure, bounded upload |
+
+| Assertion groups above | Maps to | Keep |
+| --- | --- | --- |
+| 21-38,53 | T09 reuse and integrity, ING-02 | Yes |
+| 48-50,75 | T09 tenant isolation | Yes |
+| 60-61,82 | Spec external failure and input bounds | Yes |
+
+Adequacy A-D: PASS under `CONSTRAINTS.md`; all outcomes observed through adapter
+results. Direct provider writes only inject corruption. No internal mocks,
+weakened tests or suppressions. Exact byte limit is a spec-precision choice.
 
 ### T10: Add the initial source adapter
 
