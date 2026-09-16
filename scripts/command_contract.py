@@ -3,12 +3,22 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 TARGETS = ("check", "test", "pre-push", "release-check", "operational-test")
+
+
+def child_environment() -> dict[str, str]:
+    """Keep nested Make runs outside the parent pytest-cov process."""
+    return {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("COV_CORE")
+    }
 
 
 def make_command(target: str, base: str) -> list[str]:
@@ -23,7 +33,11 @@ def make_command(target: str, base: str) -> list[str]:
 def run(target: str, base: str) -> subprocess.CompletedProcess[str]:
     """Execute one target while reserving output for a failed contract report."""
     return subprocess.run(
-        make_command(target, base), check=False, capture_output=True, text=True
+        make_command(target, base),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=child_environment(),
     )
 
 
@@ -41,7 +55,11 @@ def main() -> int:
     targets = (args.target,) if args.target else TARGETS
     for target in targets:
         dry_run = subprocess.run(
-            ["make", "-n", target], check=False, capture_output=True, text=True
+            ["make", "-n", target],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=child_environment(),
         )
         if dry_run.returncode != 0:
             print(f"{target}: target is missing", file=sys.stderr)

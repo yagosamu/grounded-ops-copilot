@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,18 @@ pytestmark = pytest.mark.unit
 
 PROJECT_ROOT = Path(__file__).parents[2]
 FLOOR_GUARD = PROJECT_ROOT / "scripts" / "floor_guard.py"
+COMMAND_CONTRACT = PROJECT_ROOT / "scripts" / "command_contract.py"
+
+
+def load_command_contract() -> object:
+    """Load the standalone contract script for its process-boundary seam."""
+    spec = importlib.util.spec_from_file_location("command_contract", COMMAND_CONTRACT)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def git(repository: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -67,3 +80,13 @@ def test_floor_guard_returns_two_when_no_merge_base_exists(tmp_path: Path) -> No
 
     assert result.returncode == 2
     assert "no merge base against missing-base" in result.stderr
+
+
+def test_command_contract_strips_parent_coverage_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COV_CORE_DATAFILE", "should-not-reach-make")
+
+    environment = load_command_contract().child_environment()
+
+    assert "COV_CORE_DATAFILE" not in environment
