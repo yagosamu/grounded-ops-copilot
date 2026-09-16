@@ -116,7 +116,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 
 **Outcome**: A reproducible repository where all documented quality commands exist and pass.
 
-### T01: Bootstrap the Python project
+### T01: Bootstrap the Python project [x]
 
 **What**: Create the locked Python 3.13 project, source layout and minimal application entry point.
 **Where**: `pyproject.toml`

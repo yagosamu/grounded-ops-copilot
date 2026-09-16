@@ -142,7 +142,7 @@ The acceptance criteria below define the testable behavior of each story.
 
 | Requirement ID | Capability | Status |
 | --- | --- | --- |
-| FND-01 | Reproducible foundation and gates | Pending |
+| FND-01 | Reproducible foundation and gates | In progress: bootstrap complete (T01) |
 | ING-01 | Idempotent ingestion | Pending |
 | ING-02 | Versioning and provenance | Pending |
 | RET-01 | Authorized BM25 baseline | Pending |
