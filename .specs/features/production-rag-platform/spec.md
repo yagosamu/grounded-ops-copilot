@@ -155,7 +155,7 @@ The acceptance criteria below define the testable behavior of each story.
 | AGT-02 | Agent promotion benchmark | Pending |
 | OPS-01 | Observability and degraded modes | Pending |
 | OPS-02 | Reindex and recovery | Pending |
-| REL-01 | Pre-push and release gates | Pending |
+| REL-01 | Pre-push and release gates | In progress: local gates complete (T02) |
 
 ## Success Criteria
 

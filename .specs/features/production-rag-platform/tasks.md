@@ -127,7 +127,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Gate**: Quick.
 **Commit**: `chore(project): bootstrap python workspace`
 
-### T02: Implement local quality commands
+### T02: Implement local quality commands [x]
 
 **What**: Add canonical `check`, `test`, `pre-push`, `release-check` and `operational-test` targets.
 **Where**: `Makefile`
