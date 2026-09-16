@@ -226,7 +226,7 @@ shallow assertions, unclaimed tests, removed tests or suppressions. Followed
 `CONSTRAINTS.md` and the task coverage matrix. Packaging and coverage now include
 the domain and existing HTTP interface so the gate measures their actual code.
 
-### T08: Persist ingestion metadata
+### T08: Persist ingestion metadata [x]
 
 **What**: Implement PostgreSQL persistence and migrations for ingestion entities and idempotency keys.
 **Where**: `src/adapters/postgres/ingestion_repository.py`
@@ -236,6 +236,34 @@ the domain and existing HTTP interface so the gate measures their actual code.
 **Tests**: repository integration tests and migration up/down test.
 **Gate**: Full.
 **Commit**: `feat(ingestion): persist jobs and document versions`
+
+**Evidence**: `make test` passed: 88 tests, zero failures, coverage >= 86%.
+Public seam: transaction-owned repository and `migrate(connection, revision)`.
+Files: PostgreSQL adapter/migrations, integration Compose/fixtures/tests,
+`pyproject.toml`, `uv.lock`, task/spec status. Assumptions: versions are immutable;
+current promotion is explicit; timestamp then source revision orders promotion.
+The repository serializes submissions on a document row. SQL and migrations
+follow the official SQLAlchemy PostgreSQL and Alembic connection-sharing APIs.
+
+| Criterion | Evidence in `tests/integration/test_ingestion_repository.py` | Outcome |
+| --- | --- | --- |
+| Create/persist payload | 28 `get_source(...) == SOURCE`; 29 document equality; 33 version equality; 36 job equality; 37-40 exact initial metadata | Full round-trip |
+| Duplicate/update/history | 54 `assert duplicate == old`; 61 `current.current_version_id == newer.version.id`; 62 `list_versions(...) == [old.version, newer.version]` | One canonical version; old retained |
+| Concurrent idempotency | 92 `assert results == [results[0]] * 4`; 94 `list_versions(...) == [results[0].version]` | Four simultaneous writers, one job/version |
+| Rollback | 107 `get_source(...) is None` after aborted transaction | No partial source |
+| Tenant/lifecycle guards | 41-44 `... is None`; 66 `... == []`; 68 unchanged document; 71,73 `... == current.delete()`; 74 `pytest.raises(ValueError, match="unknown document version")` | Isolated reads/writes; no resurrection |
+| Conflicting source revision | 115 `pytest.raises(ValueError, match="source version content conflict")`; 121 original version equality | No rewrite |
+| Migration up/down | 130 `pytest.raises(ProgrammingError)` after downgrade; 138 `result.job.state == JobState.QUEUED` after upgrade | Reversible, usable schema |
+
+| Assertion groups above | Requirement mapping | Keep |
+| --- | --- | --- |
+| 28-40,54,61-62,92-94,107,115-121 | T08 create/duplicate/update/concurrency/rollback, ING-01/02 | Yes |
+| 41-44,66-74 | ING-01 lifecycle, tenant invariant | Yes |
+| 130,138 | T08 migration up/down | Yes |
+
+Adequacy A-D: PASS. Real PostgreSQL, observable values, no internal mocks or
+weakened tests. Contract: `CONSTRAINTS.md` and coverage matrix. Exact promotion
+tie-break is a spec-precision choice; no requirement was dropped.
 
 ### T09: Store immutable document artifacts
 

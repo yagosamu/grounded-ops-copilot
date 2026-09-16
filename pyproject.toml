@@ -5,7 +5,10 @@ description = "Evidence-first engineering knowledge and incident copilot."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "alembic>=1.16,<2",
     "fastapi>=0.118.0,<1.0.0",
+    "psycopg[binary]>=3.2,<4",
+    "sqlalchemy>=2.0,<3",
 ]
 
 [dependency-groups]
@@ -24,7 +27,7 @@ requires = ["hatchling>=1.27.0,<2.0.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/grounded_ops", "src/interfaces", "src/domain"]
+packages = ["src/grounded_ops", "src/interfaces", "src/domain", "src/adapters"]
 
 [tool.ruff]
 target-version = "py313"
@@ -54,7 +57,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["grounded_ops", "interfaces", "domain"]
+source = ["grounded_ops", "interfaces", "domain", "adapters"]
 
 [tool.coverage.report]
 fail_under = 80

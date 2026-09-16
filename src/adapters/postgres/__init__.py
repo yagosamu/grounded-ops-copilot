@@ -1,0 +1,1 @@
+"""PostgreSQL authoritative metadata storage."""
