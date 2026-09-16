@@ -143,8 +143,8 @@ The acceptance criteria below define the testable behavior of each story.
 | Requirement ID | Capability | Status |
 | --- | --- | --- |
 | FND-01 | Reproducible foundation and gates | Phase 0 complete (T01-T05) |
-| ING-01 | Idempotent ingestion | Pending |
-| ING-02 | Versioning and provenance | Pending |
+| ING-01 | Idempotent ingestion | In progress: guarded lifecycle and tombstones (T07) |
+| ING-02 | Versioning and provenance | In progress: immutable domain identities and provenance (T07) |
 | RET-01 | Authorized BM25 baseline | In progress: versioned golden dataset seeded (T06) |
 | RET-02 | Experimental retrieval promotion | Pending |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |

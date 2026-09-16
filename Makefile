@@ -13,7 +13,7 @@ check:
 
 test: check
 	uv run python scripts/clean_coverage.py
-	uv run pytest --cov=grounded_ops --cov-branch --cov-report=xml --cov-fail-under=80
+	uv run pytest --cov --cov-branch --cov-report=xml --cov-fail-under=80
 
 pre-push: test
 	uv run diff-cover coverage.xml --compare-branch=$(BASE) --fail-under=80

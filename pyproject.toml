@@ -24,7 +24,7 @@ requires = ["hatchling>=1.27.0,<2.0.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/grounded_ops"]
+packages = ["src/grounded_ops", "src/interfaces", "src/domain"]
 
 [tool.ruff]
 target-version = "py313"
@@ -54,7 +54,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["grounded_ops"]
+source = ["grounded_ops", "interfaces", "domain"]
 
 [tool.coverage.report]
 fail_under = 80

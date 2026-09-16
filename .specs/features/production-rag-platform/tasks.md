@@ -190,7 +190,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 
 **Outcome**: Documents can be ingested, repeated, updated, failed and removed with complete provenance.
 
-### T07: Define ingestion domain states
+### T07: Define ingestion domain states [x]
 
 **What**: Model source, document, version and ingestion-job states with guarded transitions.
 **Where**: `src/domain/ingestion.py`
@@ -200,6 +200,31 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Tests**: unit tests for all state transitions.
 **Gate**: Quick.
 **Commit**: `feat(ingestion): define versioned ingestion domain`
+
+**Evidence**: `make check` passed, 73 unit tests (64 ingestion), zero failures.
+Tests were red on missing public contracts, then green. The domain seam is
+immutable models plus `transition`/`delete`. Assumption: retrying can return to
+any interrupted active stage; completed/failed are terminal. Names and validation
+limits are implementation choices where the specification gives no literal.
+
+| Criterion | Assertion evidence in `tests/unit/domain/test_ingestion.py` | Outcome |
+| --- | --- | --- |
+| Valid and invalid transitions | 42 `assert changed.state == after`; 50 `pytest.raises(InvalidTransition)`; 52 `assert error.value.event == {...}` | All 49 pairs guarded; safe audit payload |
+| Identity and provenance | 44 identity tuple; 74 source tuple; 80 document tuple; 85 version tuple; 90 timestamp/parser/raw tuple; 95 `pytest.raises(FrozenInstanceError)` | Version and policy retained, immutable |
+| Bounded inputs | 101, 106, 123, 128, 134, 136, 141 `pytest.raises(ValueError, match=...)` | Invalid identifiers, policy, hash, timezone, references and attempts rejected |
+| Deletion lifecycle | 116 `assert tombstone.deleted is True`; 117 `assert tombstone.current_version_id is None`; 118 `assert tombstone.delete() == tombstone` | Idempotent tombstone, no active version |
+
+| Tests / assertions above | Requirement mapping | Keep |
+| --- | --- | --- |
+| 42-52 | T07 guarded transitions, design audit event | Yes |
+| 44, 74-95 | ING-02 provenance and immutable identity | Yes |
+| 101-141 validation | Spec input bounds and state integrity | Yes |
+| 116-118 | ING-01 deletion | Yes |
+
+Adequacy A-D: PASS. Every criterion has value/state evidence; no internal mocks,
+shallow assertions, unclaimed tests, removed tests or suppressions. Followed
+`CONSTRAINTS.md` and the task coverage matrix. Packaging and coverage now include
+the domain and existing HTTP interface so the gate measures their actual code.
 
 ### T08: Persist ingestion metadata
 
