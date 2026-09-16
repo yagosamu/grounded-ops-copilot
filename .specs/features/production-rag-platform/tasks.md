@@ -160,7 +160,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Gate**: Full.
 **Commit**: `build(local): provision core data dependencies`
 
-### T05: Add health and readiness interfaces
+### T05: Add health and readiness interfaces [x]
 
 **What**: Implement separate liveness and dependency-aware readiness routes.
 **Where**: `src/interfaces/http/health.py`

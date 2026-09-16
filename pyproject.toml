@@ -11,6 +11,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "diff-cover>=10.5.1",
+    "httpx>=0.28.1",
     "mypy>=1.18.0,<2.0.0",
     "pytest>=8.4.0,<9.0.0",
     "pytest-cov>=6.0.0,<7.0.0",

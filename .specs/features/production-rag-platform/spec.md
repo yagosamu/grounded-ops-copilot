@@ -142,7 +142,7 @@ The acceptance criteria below define the testable behavior of each story.
 
 | Requirement ID | Capability | Status |
 | --- | --- | --- |
-| FND-01 | Reproducible foundation and gates | In progress: local infrastructure complete (T01-T04) |
+| FND-01 | Reproducible foundation and gates | In progress: health interfaces complete (T01-T05) |
 | ING-01 | Idempotent ingestion | Pending |
 | ING-02 | Versioning and provenance | Pending |
 | RET-01 | Authorized BM25 baseline | Pending |
