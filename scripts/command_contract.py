@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 TARGETS = ("check", "test", "pre-push", "release-check", "operational-test")
@@ -14,11 +15,15 @@ TARGETS = ("check", "test", "pre-push", "release-check", "operational-test")
 
 def child_environment() -> dict[str, str]:
     """Keep nested Make runs outside the parent pytest-cov process."""
-    return {
+    environment = {
         key: value
         for key, value in os.environ.items()
         if not key.startswith("COV_CORE")
     }
+    environment["COVERAGE_FILE"] = str(
+        Path(tempfile.gettempdir()) / f"groundedops-coverage-{os.getppid()}"
+    )
+    return environment
 
 
 def make_command(target: str, base: str) -> list[str]:

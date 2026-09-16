@@ -14,11 +14,23 @@ pytestmark = pytest.mark.unit
 PROJECT_ROOT = Path(__file__).parents[2]
 FLOOR_GUARD = PROJECT_ROOT / "scripts" / "floor_guard.py"
 COMMAND_CONTRACT = PROJECT_ROOT / "scripts" / "command_contract.py"
+CLEAN_COVERAGE = PROJECT_ROOT / "scripts" / "clean_coverage.py"
 
 
 def load_command_contract() -> object:
     """Load the standalone contract script for its process-boundary seam."""
     spec = importlib.util.spec_from_file_location("command_contract", COMMAND_CONTRACT)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_clean_coverage() -> object:
+    """Load the root-scoped coverage cleanup helper."""
+    spec = importlib.util.spec_from_file_location("clean_coverage", CLEAN_COVERAGE)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -90,3 +102,20 @@ def test_command_contract_strips_parent_coverage_variables(
     environment = load_command_contract().child_environment()
 
     assert "COV_CORE_DATAFILE" not in environment
+    assert Path(environment["COVERAGE_FILE"]).parent != PROJECT_ROOT
+
+
+def test_coverage_cleanup_removes_only_root_coverage_data(tmp_path: Path) -> None:
+    coverage_data = tmp_path / ".coverage"
+    nested_coverage_data = tmp_path / ".coverage.child"
+    retained_file = tmp_path / "retain.txt"
+    coverage_data.write_text("stale", encoding="utf-8")
+    nested_coverage_data.write_text("stale", encoding="utf-8")
+    retained_file.write_text("keep", encoding="utf-8")
+
+    removed = load_clean_coverage().clean_coverage_files(tmp_path)
+
+    assert set(removed) == {coverage_data, nested_coverage_data}
+    assert not coverage_data.exists()
+    assert not nested_coverage_data.exists()
+    assert retained_file.read_text(encoding="utf-8") == "keep"
