@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import pathlib
 import shutil
 import subprocess
@@ -30,11 +31,17 @@ def test_project_declares_python_313_requirement() -> None:
 
 
 def test_python_version_mismatch_is_rejected() -> None:
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("COV_CORE")
+    }
     result = subprocess.run(
         [shutil.which("uv") or "uv", "sync", "--locked", "--python", "3.12"],
         check=False,
         capture_output=True,
         text=True,
+        env=environment,
     )
 
     assert result.returncode != 0

@@ -149,7 +149,7 @@ Phases run sequentially. Tasks inside each phase run in the listed order unless 
 **Gate**: Build.
 **Commit**: `build(quality): enforce python checks and test markers`
 
-### T04: Provision local infrastructure
+### T04: Provision local infrastructure [x]
 
 **What**: Define health-checked PostgreSQL, OpenSearch and object-storage containers.
 **Where**: `compose.yml`
