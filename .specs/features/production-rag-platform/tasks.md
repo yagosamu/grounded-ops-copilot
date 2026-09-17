@@ -602,7 +602,7 @@ request and indexed response ordering (`test_openai_embedding_contract.py:68-78`
 without an API key or paid call. Adequacy A-D: PASS; all done-when outcomes have
 observable public-interface evidence, no private seams, skips or suppressions.
 
-### T21: Build the dense retrieval candidate
+### T21: Build the dense retrieval candidate [x]
 
 **What**: Add vector mappings and dense query execution without changing the default.
 **Where**: `src/modules/retrieval/dense.py`
@@ -612,6 +612,18 @@ observable public-interface evidence, no private seams, skips or suppressions.
 **Tests**: unit, OpenSearch integration and retrieval eval tests.
 **Gate**: Release.
 **Commit**: `feat(retrieval): add dense candidate`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed after one transient Docker restart failure: 164 tests in the coverage run,
+46 release-marker tests, 90.86% total coverage, 88% diff coverage, zero leaks and
+a clean floor guard. Public seams: `DenseRetriever` and `OpenSearchDenseAdapter`.
+The unit contract asserts the complete tenant/ACL/corpus/filter request
+(`test_dense_retrieval.py:83-94`), typed evidence (`:96-99`), reauthorization and
+safe failure (`:117-119`). Real OpenSearch proves vector ordering, ACL and tenant
+isolation (`test_opensearch_dense_retrieval.py:110-112`). The eval uses the exact
+dataset hash and golden query IDs from the BM25 baseline with Recall@10 and
+nDCG@10 both 1.00 (`test_dense_candidate.py:42-50`). Adequacy A-D: PASS; the
+candidate is explicit and does not modify the BM25 production default.
 
 ### T22: Build the hybrid fusion candidate
 
