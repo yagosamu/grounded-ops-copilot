@@ -625,7 +625,7 @@ dataset hash and golden query IDs from the BM25 baseline with Recall@10 and
 nDCG@10 both 1.00 (`test_dense_candidate.py:42-50`). Adequacy A-D: PASS; the
 candidate is explicit and does not modify the BM25 production default.
 
-### T22: Build the hybrid fusion candidate
+### T22: Build the hybrid fusion candidate [x]
 
 **What**: Combine lexical and dense rankings using configurable reciprocal-rank fusion.
 **Where**: `src/modules/retrieval/hybrid.py`
@@ -635,6 +635,17 @@ candidate is explicit and does not modify the BM25 production default.
 **Tests**: unit, integration and retrieval eval tests.
 **Gate**: Release.
 **Commit**: `feat(retrieval): add hybrid fusion candidate`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 171 tests in the coverage run, 48 release-marker tests, 90.35% total
+coverage, 90% diff coverage, zero leaks and a clean floor guard. Public seam:
+`HybridRetriever.retrieve`. Exact RRF ordering, duplicate identity fusion, scores
+and latency are asserted at `test_hybrid_retrieval.py:59-63`; both missing-leg
+fallbacks at `:78-80`; deterministic ties and policy recheck at `:100-101`; and
+both-leg failure at `:111-112`. The composition test proves public BM25+dense
+deduplication (`test_hybrid_composition.py:94-96`), while the eval pins the shared
+dataset hash and quality (`test_hybrid_candidate.py:43-47`). Adequacy A-D: PASS;
+no private seam, skipped test or automatic promotion was introduced.
 
 ### T23: Add the reranking candidate
 
