@@ -723,7 +723,7 @@ fallback, with no manual promotion.
 
 **Outcome**: `Ask` produces verified citations or abstains, while remaining usable in degraded modes.
 
-### T26: Define grounded-answer contracts
+### T26: Define grounded-answer contracts [x]
 
 **What**: Model questions, evidence, claims, citations, verification status and abstention reasons.
 **Where**: `src/domain/answering.py`
@@ -733,6 +733,15 @@ fallback, with no manual promotion.
 **Tests**: domain invariant unit tests.
 **Gate**: Quick.
 **Commit**: `feat(answering): define grounded answer contracts`
+
+**Evidence**: `make check` passed: 135 unit tests, zero failures. Public seam:
+immutable `Question`, `Citation`, `Claim`, `AnswerUsage` and `GroundedAnswer`
+contracts. A verified answer's complete payload and immutability are asserted at
+`test_answering.py:32-39`; missing claims, missing citations and unresolved
+citations are rejected at `:57`; invalid spans at `:69`; abstention state/reason
+coherence at `:86-103`. Adequacy A-D: PASS under `CONSTRAINTS.md` and the task
+coverage matrix. Every assertion maps to ANS-01/ANS-02 or the done-when invariant;
+no internal mocks, shallow assertions, skipped tests or suppressions.
 
 ### T27: Build the bounded context packer
 
