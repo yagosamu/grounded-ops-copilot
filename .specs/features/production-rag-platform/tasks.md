@@ -513,7 +513,7 @@ no-match deny (`:51-52`), unknown principal (`:63-64`), cross-tenant (`:76-77`)
 and unsupported action (`:88-89`). Adequacy A-D: PASS; every decision asserts
 both boolean outcome and explicit reason through the public interface.
 
-### T17: Implement BM25 retrieval
+### T17: Implement BM25 retrieval [x]
 
 **What**: Return a typed `EvidenceSet` using BM25 and mandatory policy filters.
 **Where**: `src/modules/retrieval/retriever.py`
@@ -523,6 +523,15 @@ both boolean outcome and explicit reason through the public interface.
 **Tests**: unit tests with a fake adapter and OpenSearch integration tests.
 **Gate**: Full.
 **Commit**: `feat(retrieval): add authorized bm25 baseline`
+
+**Evidence**: `make test` passed: 144 tests, zero failures, 91.65% coverage.
+Public seam: `BM25Retriever.retrieve(QueryContext) -> EvidenceSet`; adapter seam:
+`OpenSearchBM25Adapter.search`. Unit evidence covers ordered scores, version/date/
+span/current provenance (`test_retriever.py:65-73`), reauthorization (`:95`),
+empty and redacted failure (`:106-123`). Real OpenSearch proves BM25 ordering and
+tenant isolation (`test_opensearch_retrieval.py:96-98`), ACL/metadata/history
+filters (`:117-121`) and dependency failure (`:138-143`). Adequacy A-D: PASS;
+fake only exercises the public adapter contract and query DSL runs on OpenSearch.
 
 ### T18: Expose the evidence search route
 
