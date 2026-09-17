@@ -147,7 +147,7 @@ The acceptance criteria below define the testable behavior of each story.
 | ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
-| ANS-01 | Grounded citations | In progress: versioned golden dataset and grounded-answer contracts complete (T06, T26) |
+| ANS-01 | Grounded citations | In progress: versioned dataset, answer contracts and bounded diverse context complete (T06, T26-T27) |
 | ANS-02 | Abstention and verification | In progress: verification and abstention state invariants complete (T26) |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |
 | SEC-02 | Untrusted-content and secret controls | Pending |

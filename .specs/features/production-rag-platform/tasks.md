@@ -743,7 +743,7 @@ coherence at `:86-103`. Adequacy A-D: PASS under `CONSTRAINTS.md` and the task
 coverage matrix. Every assertion maps to ANS-01/ANS-02 or the done-when invariant;
 no internal mocks, shallow assertions, skipped tests or suppressions.
 
-### T27: Build the bounded context packer
+### T27: Build the bounded context packer [x]
 
 **What**: Select evidence within token budget while preserving source diversity and provenance.
 **Where**: `src/modules/answering/context_packer.py`
@@ -753,6 +753,15 @@ no internal mocks, shallow assertions, skipped tests or suppressions.
 **Tests**: unit and property tests.
 **Gate**: Quick.
 **Commit**: `feat(answering): pack bounded evidence context`
+
+**Evidence**: `make check` passed: 141 unit tests, zero failures. Public seam:
+`ContextPacker.pack(EvidenceSet) -> PackedContext`. Exact diverse ordering, hard
+budget and version/span/hash provenance are asserted at
+`test_context_packer.py:50-56`; versioned deduplication at `:76-78`; preserved
+conflicts at `:103-104`; empty determinism at `:112-116`; and the hard-bound
+property for every budget 1-15 at `:130-133`. Adequacy A-D: PASS under
+`CONSTRAINTS.md`; all done-when cases have observable value evidence and every
+test maps to ANS-01 or an explicit bound, with no mocks, skips or suppressions.
 
 ### T28: Implement provider-neutral generation
 
