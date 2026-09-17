@@ -65,6 +65,12 @@ class EvidenceSet:
     strategy: str
     total: int
     took_ms: int
+    degraded: bool = False
+    degradation_reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.degraded != (self.degradation_reason is not None):
+            raise ValueError("invalid retrieval degradation metadata")
 
 
 class BM25Retriever:

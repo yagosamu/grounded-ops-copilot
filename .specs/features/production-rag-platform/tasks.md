@@ -830,7 +830,7 @@ separate counters for all three reasons, provider failure and success at
 A-D: PASS under `CONSTRAINTS.md`; all reasons are stable and user-facing, every
 test maps to ANS-02, and no failure is hidden by skip or suppression.
 
-### T31: Expose the streaming Ask route
+### T31: Expose the streaming Ask route [x]
 
 **What**: Add authenticated streaming with final verification status, sources and degraded-mode metadata.
 **Where**: `src/interfaces/http/ask.py`
@@ -840,6 +840,20 @@ test maps to ANS-02, and no failure is hidden by skip or suppression.
 **Tests**: API/E2E streaming tests.
 **Gate**: Full.
 **Commit**: `feat(api): expose verified streaming ask`
+
+**Evidence**: `make test` passed in the final T31 state: 229 tests, zero failures,
+89.62% total coverage; the coverage run completed in 75.24 s. Public seams:
+`POST /v1/ask`, `AskService.start -> AskSession` and
+`OpenAIGenerationProvider.stream`. The API proves unverified delta followed by a
+verified terminal answer with exact citations, sources, usage and auth context at
+`test_ask.py:144-180`; abstention without generation at `:193-201`; typed timeout
+outside abstention at `:215-222`; explicit BM25-only degradation at `:242-246`;
+401/403/422 paths at `:262-266`; and ASGI disconnect cancellation at `:342-344`.
+The local SSE contract proves `stream=true`, `store=false`, JSON Schema, parsed
+terminal claims/usage at `test_openai_generation_stream_contract.py:212-220`,
+plus redacted `incomplete`/`error` classification at `:245-257`. Adequacy A-D:
+PASS under `CONSTRAINTS.md`; every route/failure criterion has observable payload
+evidence and generation cannot emit verified status before deterministic verification.
 
 ### T32: Establish the answer benchmark
 

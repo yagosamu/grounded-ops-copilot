@@ -19,10 +19,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 3 complete; T26 is next.
-- **Completed**: T01-T25, including versioned embeddings, dense and hybrid candidates, bounded reranking, chunking experiments and the measured BM25 production decision.
-- **In-progress**: none.
-- **Next step**: Execute T26 to define grounded-answer contracts without changing the measured retrieval configuration.
-- **Blockers**: none.
-- **Uncommitted files**: none after the T25 commit; `progress.md` remains ignored and local.
+- **Phase / Task**: Phase 4 in progress; T26-T31 complete and T32 blocked.
+- **Completed**: T01-T31, including bounded context, structured Responses generation, exact claim citation verification, calibrated abstention and verified streaming Ask.
+- **In-progress**: none; T32 has no partial implementation or benchmark artifact.
+- **Next step**: Provide `OPENAI_API_KEY`, then execute the real T32 benchmark for GPT-5 nano, GPT-4o Mini, GPT-5.6 Luna and the Terra difficult subset.
+- **Blockers**: `OPENAI_API_KEY` is absent; T32 requires real model outputs and cannot use fabricated or substitute results.
+- **Uncommitted files**: none after the T31 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.
