@@ -786,7 +786,7 @@ Adequacy A-D: PASS under `CONSTRAINTS.md`; every done-when failure is typed and
 redacted, generation never grants verified status, and no test is skipped or
 suppressed. The local Docker duration exceeded the 90 s target and remains visible.
 
-### T29: Verify claim-level citations
+### T29: Verify claim-level citations [x]
 
 **What**: Resolve citations to exact versioned spans and assign verified, unverified or abstained status.
 **Where**: `src/modules/answering/verifier.py`
@@ -796,6 +796,16 @@ suppressed. The local Docker duration exceeded the 90 s target and remains visib
 **Tests**: unit tests mapped to every citation criterion.
 **Gate**: Quick.
 **Commit**: `feat(answering): verify claim-level citations`
+
+**Evidence**: `make check` passed: 154 unit tests, zero failures. Public seam:
+`CitationVerifier.verify(GroundedAnswer, EvidenceSet)`. Exact supported resolution,
+verified status, resolved citation and retained usage are asserted at
+`test_verifier.py:64-70`; missing citation at `:79-80`; fabricated evidence ID at
+`:95-96`; mismatched version at `:111-112`; mismatched span at `:127-128`; and
+unsupported claim at `:143-144`. Empty evidence remains unverified at `:159-161`.
+Adequacy A-D: PASS under `CONSTRAINTS.md`; every citation criterion has a dedicated
+value assertion, failures are typed, and no mock, shallow assertion, skip or
+suppression substitutes for verification.
 
 ### T30: Implement evidence-based abstention
 
