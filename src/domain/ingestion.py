@@ -109,12 +109,20 @@ class IngestionJob:
     state: JobState = JobState.QUEUED
     attempts: int = 0
     error_class: str | None = None
+    resume_from: JobState | None = None
 
     def __post_init__(self) -> None:
         for value in (self.id, self.tenant_id, self.idempotency_key):
             validate_identifier(value)
         if self.attempts < 0:
             raise ValueError("attempts cannot be negative")
+        if self.resume_from not in {
+            None,
+            JobState.FETCHING,
+            JobState.PARSING,
+            JobState.INDEXING,
+        }:
+            raise ValueError("invalid retry checkpoint")
 
     def transition(self, target: JobState) -> "IngestionJob":
         permitted = {
@@ -133,4 +141,8 @@ class IngestionJob:
         }
         if target not in permitted[self.state]:
             raise InvalidTransition(self, target)
-        return replace(self, state=target)
+        return replace(
+            self,
+            state=target,
+            resume_from=None if self.state == JobState.RETRYING else self.resume_from,
+        )

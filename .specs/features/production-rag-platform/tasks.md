@@ -408,7 +408,7 @@ exercise parser and chunker public seams with exact output/state assertions; no
 internal collaborators are mocked. No shallow, skipped, weakened or unclaimed
 tests. The v1 token proxy is a documented spec-precision choice.
 
-### T13: Orchestrate idempotent ingestion
+### T13: Orchestrate idempotent ingestion [x]
 
 **What**: Coordinate fetch, store, parse, chunk and index preparation with bounded retries and DLQ state.
 **Where**: `src/modules/ingestion/pipeline.py`
@@ -418,6 +418,38 @@ tests. The v1 token proxy is a documented spec-precision choice.
 **Tests**: module unit tests plus end-to-end ingestion integration test.
 **Gate**: Full.
 **Commit**: `feat(ingestion): orchestrate recoverable pipeline`
+
+**Evidence**: `make test` passed: 123 tests, zero failures, 90.07% coverage.
+Public seams: `IngestionPipeline.run/resume` and
+`IndexPreparationSink.prepare`. The E2E test uses `MarkdownCorpus`, PostgreSQL
+and `DocumentStore` adapters against real ephemeral services. Files: pipeline
+and retry contract, durable checkpoint migration/repository methods, unit/E2E
+tests, task/spec status and Phase 1 handoff. Assumptions: worker invocations
+perform one bounded attempt then persist `resume_from`; index preparation is an
+idempotent versioned projection seam and does not implement OpenSearch.
+
+| Criterion | Assertion evidence | Outcome |
+| --- | --- | --- |
+| Repeat and update without duplicates | `tests/integration/test_ingestion_pipeline_e2e.py`: 83-91 completed states, same repeat job, distinct update version and exactly two versions | Canonical repeat; retained history |
+| Real artifacts and provenance preparation | E2E 92-108 stored raw/normalized refs, tenant/version identity and non-empty spans | Complete durable and projection provenance |
+| Delete lifecycle | E2E 109-112 exact deleted outcome, tombstone and no current version | Removed from active lifecycle |
+| Partial failure and resume | `tests/unit/modules/test_ingestion_pipeline.py`: 185-205 retry checkpoint/attempt/error, completed resume, one version, two idempotent sink calls and versioned chunk payload | Resume does not duplicate versions or preparations |
+| Retry exhaustion and redacted DLQ | Unit 216-225 terminal failure, two attempts, retry key/error/attempt payload, no private detail and no third call | Bounded observable failure |
+| Parsing failure checkpoint | Unit 236-241 parsing resume point, failed/DLQ class and no prepared records | Stage-specific safe failure |
+| Deletion without new version | Unit 252-258 completed source, deleted result/tombstone and one retained version | Idempotent lifecycle data retention |
+
+| Assertion groups above | Maps to | Keep |
+| --- | --- | --- |
+| E2E 83-112 | T13 repeat/update/delete, ING-01/02 real-adapter vertical slice | Yes |
+| Unit 185-205 | T13 partial failure/resume, ING-01/02 provenance | Yes |
+| Unit 216-241 | T13 bounded retries, redacted DLQ, OPS-01 | Yes |
+| Unit 252-258 | ING-01 deletion lifecycle | Yes |
+
+Adequacy A-D: PASS under `CONSTRAINTS.md` and the task coverage matrix. Unit
+fakes exist only at storage/index boundaries; the E2E path uses real source,
+database and object-store adapters. Assertions target public results and durable
+state, not collaborator call counts alone. No shallow, skipped, weakened or
+unclaimed tests. Retry scheduling is a documented spec-precision choice.
 
 **Phase gate**: `make pre-push`; demonstrate ingest/repeat/update/fail/delete; record provenance audit.
 

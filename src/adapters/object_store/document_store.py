@@ -10,12 +10,13 @@ from typing import TYPE_CHECKING
 from botocore.exceptions import BotoCoreError, ClientError
 
 from domain.ingestion import validate_identifier
+from modules.ingestion.errors import ArtifactFailure
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
 
 
-class ArtifactError(ValueError):
+class ArtifactError(ArtifactFailure):
     """A safe artifact failure, without provider configuration or contents."""
 
 

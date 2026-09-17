@@ -19,10 +19,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Planning complete; T01 is next.
-- **Completed**: Specification, design, task plan and quality contract.
+- **Phase / Task**: Phase 1 complete; T14 is next.
+- **Completed**: T01-T13, including reliable source ingestion, durable version history, immutable artifacts, deterministic parsing/chunking and recoverable orchestration.
 - **In-progress**: none.
-- **Next step**: Execute T01 on `main` after the planning commit is available remotely.
+- **Next step**: Execute T14 to create versioned lexical index mappings.
 - **Blockers**: none.
-- **Uncommitted files**: none after the planning commit.
-- **Branch**: `main`.
+- **Uncommitted files**: none after the T13 commit.
+- **Branch**: `main`, seven commits ahead of `origin/main` after T13.

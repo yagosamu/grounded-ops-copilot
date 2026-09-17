@@ -7,6 +7,7 @@ from hashlib import sha256
 from uuid import uuid4
 
 from sqlalchemy import Connection, text
+from sqlalchemy.engine import RowMapping
 
 from domain.ingestion import Document, DocumentVersion, IngestionJob, JobState, Source
 
@@ -131,7 +132,7 @@ class IngestionRepository:
         row = (
             self.connection.execute(
                 text("""
-            SELECT id,tenant_id,idempotency_key,state,attempts,error_class
+            SELECT id,tenant_id,idempotency_key,state,attempts,error_class,resume_from
             FROM ingestion_jobs WHERE tenant_id=:tenant AND idempotency_key=:key
         """),
                 {"tenant": source.tenant_id, "key": key},
@@ -142,7 +143,7 @@ class IngestionRepository:
         return Submission(
             document,
             version,
-            IngestionJob(**dict(row) | {"state": JobState(row["state"])}),
+            self._job(row),
         )
 
     def get_source(self, tenant_id: str, source_id: str) -> Source | None:
@@ -188,7 +189,7 @@ class IngestionRepository:
         row = (
             self.connection.execute(
                 text("""
-            SELECT id,tenant_id,idempotency_key,state,attempts,error_class
+            SELECT id,tenant_id,idempotency_key,state,attempts,error_class,resume_from
             FROM ingestion_jobs WHERE tenant_id=:tenant AND id=:id
         """),
                 {"tenant": tenant_id, "id": job_id},
@@ -196,11 +197,7 @@ class IngestionRepository:
             .mappings()
             .one_or_none()
         )
-        return (
-            IngestionJob(**dict(row) | {"state": JobState(row["state"])})
-            if row
-            else None
-        )
+        return self._job(row) if row else None
 
     def list_versions(self, tenant_id: str, document_id: str) -> list[DocumentVersion]:
         rows = self.connection.execute(
@@ -211,6 +208,74 @@ class IngestionRepository:
             {"tenant": tenant_id, "id": document_id},
         ).mappings()
         return [DocumentVersion(**dict(row)) for row in rows]
+
+    def get_document_by_key(
+        self, tenant_id: str, source_id: str, canonical_key: str
+    ) -> Document | None:
+        row = (
+            self.connection.execute(
+                text("""
+            SELECT * FROM documents WHERE tenant_id=:tenant AND source_id=:source
+            AND canonical_key=:key
+        """),
+                {"tenant": tenant_id, "source": source_id, "key": canonical_key},
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return Document(**dict(row)) if row else None
+
+    def save_job(self, job: IngestionJob) -> IngestionJob:
+        result = self.connection.execute(
+            text("""
+            UPDATE ingestion_jobs SET state=:state, attempts=:attempts,
+                error_class=:error, resume_from=:resume, updated_at=now()
+            WHERE tenant_id=:tenant AND id=:id
+        """),
+            {
+                "tenant": job.tenant_id,
+                "id": job.id,
+                "state": job.state.value,
+                "attempts": job.attempts,
+                "error": job.error_class,
+                "resume": job.resume_from.value if job.resume_from else None,
+            },
+        )
+        if result.rowcount != 1:
+            raise ValueError("unknown ingestion job")
+        return job
+
+    def update_artifacts(
+        self,
+        tenant_id: str,
+        version_id: str,
+        raw_ref: str,
+        normalized_ref: str,
+    ) -> DocumentVersion:
+        row = (
+            self.connection.execute(
+                text("""
+            UPDATE document_versions
+            SET raw_ref=COALESCE(raw_ref,:raw),
+                normalized_ref=COALESCE(normalized_ref,:normalized)
+            WHERE tenant_id=:tenant AND id=:id
+              AND (raw_ref IS NULL OR raw_ref=:raw)
+              AND (normalized_ref IS NULL OR normalized_ref=:normalized)
+            RETURNING *
+        """),
+                {
+                    "tenant": tenant_id,
+                    "id": version_id,
+                    "raw": raw_ref,
+                    "normalized": normalized_ref,
+                },
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            raise ValueError("artifact reference conflict")
+        return DocumentVersion(**dict(row))
 
     def promote(self, tenant_id: str, version_id: str) -> None:
         version = self.get_version(tenant_id, version_id)
@@ -252,3 +317,11 @@ class IngestionRepository:
         """),
             {"tenant": tenant_id, "document": document_id},
         )
+
+    @staticmethod
+    def _job(row: RowMapping) -> IngestionJob:
+        values = dict(row)
+        values["state"] = JobState(values["state"])
+        if values["resume_from"] is not None:
+            values["resume_from"] = JobState(values["resume_from"])
+        return IngestionJob(**values)
