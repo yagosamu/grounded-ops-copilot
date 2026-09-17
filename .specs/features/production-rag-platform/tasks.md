@@ -647,7 +647,7 @@ deduplication (`test_hybrid_composition.py:94-96`), while the eval pins the shar
 dataset hash and quality (`test_hybrid_candidate.py:43-47`). Adequacy A-D: PASS;
 no private seam, skipped test or automatic promotion was introduced.
 
-### T23: Add the reranking candidate
+### T23: Add the reranking candidate [x]
 
 **What**: Rerank a bounded candidate set while preserving evidence identity and policy decisions.
 **Where**: `src/modules/retrieval/reranker.py`
@@ -657,6 +657,17 @@ no private seam, skipped test or automatic promotion was introduced.
 **Tests**: unit, contract and retrieval eval tests.
 **Gate**: Release.
 **Commit**: `feat(retrieval): add bounded reranker candidate`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 176 tests in the coverage run, 50 release-marker tests, 90.06% total
+coverage, 89% diff coverage, zero leaks and a clean floor guard. Public seams:
+`Reranker` and `RerankProvider`. Candidate bounds and exact provider payload are
+asserted at `test_reranker.py:60-67`; stable IDs, scores, policy/provenance and
+latency at `:68-74`; exact timeout fallback and added latency at `:84-86`; invalid
+identity sets at `:95-96`. The deterministic local HTTP contract verifies request,
+scores and measured latency (`test_reranker_contract.py:55-63`). The eval pins the
+baseline dataset and quality (`test_reranker_candidate.py:43-47`). Adequacy A-D:
+PASS; the candidate remains bounded and unpromoted.
 
 ### T24: Compare chunking candidates
 
