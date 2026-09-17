@@ -669,7 +669,7 @@ scores and measured latency (`test_reranker_contract.py:55-63`). The eval pins t
 baseline dataset and quality (`test_reranker_candidate.py:43-47`). Adequacy A-D:
 PASS; the candidate remains bounded and unpromoted.
 
-### T24: Compare chunking candidates
+### T24: Compare chunking candidates [x]
 
 **What**: Evaluate fixed, structural and parent-child chunking on the same corpus and query set.
 **Where**: `evals/retrieval/chunking_experiment.py`
@@ -679,6 +679,18 @@ PASS; the candidate remains bounded and unpromoted.
 **Tests**: experiment reproducibility and metric tests.
 **Gate**: Release.
 **Commit**: `test(retrieval): compare chunking strategies`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 179 tests in the coverage run, 53 release-marker tests, 90.06% total
+coverage, 89% diff coverage, zero leaks and a clean floor guard. Public seam:
+`run_chunking_experiment`. The metric test pins dataset/query count and all three
+strategies (`test_chunking_experiment.py:34-42`), then asserts config hashes,
+Recall@10, MRR, nDCG@10, citation-span precision, index bytes, ingest/query latency
+and the two-query limitation (`:44-53`). Repeatability is exact with a controlled
+clock (`:63-64`); the immutable real-clock report is validated at `:75-86`.
+Measured v1 quality is tied at 1.00 for every strategy; index sizes are 636 bytes
+fixed, 408 structural and 402 parent-child. Adequacy A-D: PASS; timings are measured,
+not promotion claims, and the small dataset is explicit.
 
 ### T25: Promote the qualifying retrieval configuration
 

@@ -1,0 +1,45 @@
+{
+  "candidates": [
+    {
+      "citation_span_precision": 1.0,
+      "config_hash": "b380c6ba5641a3bf362dbecd23827fab9ff3a5a8e1c45bf24ede1d04cc858a20",
+      "index_size_bytes": 636,
+      "ingest_ms": 0.019999999494757503,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "query_p50_ms": 0.07750000077066943,
+      "query_p95_ms": 0.12439000092854258,
+      "recall_at_10": 1.0,
+      "strategy": "fixed"
+    },
+    {
+      "citation_span_precision": 1.0,
+      "config_hash": "c4e46274ab54999512a420444445bd8912505318811b6438b9882aedfa53e4a7",
+      "index_size_bytes": 408,
+      "ingest_ms": 0.09969999882741831,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "query_p50_ms": 0.02099999983329326,
+      "query_p95_ms": 0.02342999869142659,
+      "recall_at_10": 1.0,
+      "strategy": "structural"
+    },
+    {
+      "citation_span_precision": 1.0,
+      "config_hash": "980bc307a021a324a09f57ec3f9907eddff202ba45099dcb37aa952271e7fc12",
+      "index_size_bytes": 402,
+      "ingest_ms": 0.09209999916492961,
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "query_p50_ms": 0.019999999494757503,
+      "query_p95_ms": 0.021800000104121864,
+      "recall_at_10": 1.0,
+      "strategy": "parent-child"
+    }
+  ],
+  "dataset_hash": "64348837243fe876c3e024859bb4750bd25aa64a9f348994eb97f01443bd9dac",
+  "limitations": [
+    "dataset v1 contains only 2 golden queries"
+  ],
+  "query_count": 2
+}
