@@ -495,7 +495,7 @@ prove idempotent upsert, retained historical versions and policy projection
 rollback that preserves the prior current version (`:107,115-118`). Adequacy A-D:
 PASS; outcomes are queried from the public index and no dependency is mocked.
 
-### T16: Implement the policy module
+### T16: Implement the policy module [x]
 
 **What**: Resolve tenant, role, group and document decisions outside the model.
 **Where**: `src/modules/policy/authorizer.py`
@@ -505,6 +505,13 @@ PASS; outcomes are queried from the public index and no dependency is mocked.
 **Tests**: exhaustive authorization unit tests.
 **Gate**: Quick.
 **Commit**: `feat(policy): authorize document access`
+
+**Evidence**: `make check` passed: 106 unit tests, zero failures. Public seam:
+`Authorizer.authorize`. The exhaustive table proves public, principal, role and
+group allow reasons (`test_authorizer.py:37-39`); dedicated assertions prove
+no-match deny (`:51-52`), unknown principal (`:63-64`), cross-tenant (`:76-77`)
+and unsupported action (`:88-89`). Adequacy A-D: PASS; every decision asserts
+both boolean outcome and explicit reason through the public interface.
 
 ### T17: Implement BM25 retrieval
 

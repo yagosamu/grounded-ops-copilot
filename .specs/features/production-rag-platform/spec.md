@@ -149,7 +149,7 @@ The acceptance criteria below define the testable behavior of each story.
 | RET-02 | Experimental retrieval promotion | Pending |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |
 | ANS-02 | Abstention and verification | Pending |
-| SEC-01 | Tenant/document isolation | Pending |
+| SEC-01 | Tenant/document isolation | In progress: explicit tenant/role/group/document authorization decisions complete (T16) |
 | SEC-02 | Untrusted-content and secret controls | Pending |
 | AGT-01 | Bounded investigation | Pending |
 | AGT-02 | Agent promotion benchmark | Pending |
