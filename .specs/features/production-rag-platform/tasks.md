@@ -807,7 +807,7 @@ Adequacy A-D: PASS under `CONSTRAINTS.md`; every citation criterion has a dedica
 value assertion, failures are typed, and no mock, shallow assertion, skip or
 suppression substitutes for verification.
 
-### T30: Implement evidence-based abstention
+### T30: Implement evidence-based abstention [x]
 
 **What**: Abstain on insufficient, unauthorized or irreconcilably conflicting evidence.
 **Where**: `src/modules/answering/abstention.py`
@@ -817,6 +817,18 @@ suppression substitutes for verification.
 **Tests**: unit and answer-eval tests.
 **Gate**: Release.
 **Commit**: `feat(answering): add calibrated abstention`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 219 tests in coverage, 60 release-marker tests, 90.02% total coverage,
+92% diff coverage, zero leaks and a clean floor guard. Public seams:
+`AbstentionDecider`, `AbstentionDecision` and `measure_outcomes`. Insufficient
+reason/message and abstained answer payload are asserted at
+`test_abstention.py:67-78`; unauthorized at `:87-91`; conflict at `:100-104`;
+verification failure and sufficient evidence at `:119-125`. The answer eval proves
+separate counters for all three reasons, provider failure and success at
+`test_answer_abstention.py:41-45`, and rejects conflation at `:50-57`. Adequacy
+A-D: PASS under `CONSTRAINTS.md`; all reasons are stable and user-facing, every
+test maps to ANS-02, and no failure is hidden by skip or suppression.
 
 ### T31: Expose the streaming Ask route
 

@@ -148,7 +148,7 @@ The acceptance criteria below define the testable behavior of each story.
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
 | ANS-01 | Grounded citations | In progress: versioned dataset, contracts, bounded context, structured generation and exact citation verification complete (T06, T26-T29) |
-| ANS-02 | Abstention and verification | In progress: state invariants and deterministic citation failure classification complete (T26, T29) |
+| ANS-02 | Abstention and verification | In progress: state invariants, citation failure classification and calibrated evidence abstention complete (T26, T29-T30) |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |
 | SEC-02 | Untrusted-content and secret controls | Pending |
 | AGT-01 | Bounded investigation | Pending |
