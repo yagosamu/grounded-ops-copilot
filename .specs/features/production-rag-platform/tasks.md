@@ -763,7 +763,7 @@ property for every budget 1-15 at `:130-133`. Adequacy A-D: PASS under
 `CONSTRAINTS.md`; all done-when cases have observable value evidence and every
 test maps to ANS-01 or an explicit bound, with no mocks, skips or suppressions.
 
-### T28: Implement provider-neutral generation
+### T28: Implement provider-neutral generation [x]
 
 **What**: Generate structured answers with usage, timeout and provider-failure reporting.
 **Where**: `src/modules/answering/generator.py`
@@ -773,6 +773,18 @@ test maps to ANS-01 or an explicit bound, with no mocks, skips or suppressions.
 **Tests**: unit and provider contract tests.
 **Gate**: Full.
 **Commit**: `feat(answering): generate structured grounded answers`
+
+**Evidence**: `make test` passed: 205 tests, zero failures and 89.53% total
+coverage (the coverage run took 121.64 s on local Docker). Public seams:
+`GenerationProvider` and `AnswerGenerator`. Structured claims, exact proposed
+citations, unverified status and usage are asserted at `test_generator.py:81-91`;
+bounded retry and stable failures at `:108-109,132-134`; fabricated output at
+`:155-156`. The local HTTP contract proves `POST /v1/responses`, model,
+`store=false`, max output, evidence input, `text.format` JSON Schema and parsed
+usage at `test_openai_generation_contract.py:156-169`, without a paid call.
+Adequacy A-D: PASS under `CONSTRAINTS.md`; every done-when failure is typed and
+redacted, generation never grants verified status, and no test is skipped or
+suppressed. The local Docker duration exceeded the 90 s target and remains visible.
 
 ### T29: Verify claim-level citations
 
