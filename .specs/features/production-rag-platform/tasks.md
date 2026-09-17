@@ -477,7 +477,7 @@ rejection of an incompatible physical index (`:55`). The fingerprint is stored i
 mapping metadata; schema changes require a new physical version. Adequacy A-D:
 PASS, with exact observable mapping/alias assertions and no mocks or suppressions.
 
-### T15: Index and remove document versions
+### T15: Index and remove document versions [x]
 
 **What**: Project current authorized chunks into OpenSearch and tombstone removed documents.
 **Where**: `src/adapters/opensearch/index_writer.py`
@@ -487,6 +487,13 @@ PASS, with exact observable mapping/alias assertions and no mocks or suppression
 **Tests**: indexing integration tests.
 **Gate**: Full.
 **Commit**: `feat(search): project document versions into index`
+
+**Evidence**: `make test` passed: 129 tests, zero failures, 90.74% coverage.
+Public seam: `OpenSearchIndexWriter.upsert/remove_document`. Real OpenSearch tests
+prove idempotent upsert, retained historical versions and policy projection
+(`test_opensearch_index_writer.py:68-72`), deletion (`:86`) and partial-bulk
+rollback that preserves the prior current version (`:107,115-118`). Adequacy A-D:
+PASS; outcomes are queried from the public index and no dependency is mocked.
 
 ### T16: Implement the policy module
 
