@@ -1,0 +1,36 @@
+{
+  "config_hash": "7381ddf595c4e744226d356729ea29918613313bc96317bfdffaf9c683878927",
+  "dataset_hash": "64348837243fe876c3e024859bb4750bd25aa64a9f348994eb97f01443bd9dac",
+  "errors": {},
+  "latency_p50_ms": 17.0,
+  "latency_p95_ms": 26.0,
+  "mrr": 1.0,
+  "ndcg_at_k": 1.0,
+  "queries": [
+    {
+      "error": null,
+      "latency_ms": 27.0,
+      "ndcg_at_k": 1.0,
+      "query_id": "tracing-components",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_source_ids": [
+        "otel-tracing-api",
+        "otel-resource"
+      ]
+    },
+    {
+      "error": null,
+      "latency_ms": 7.0,
+      "ndcg_at_k": 1.0,
+      "query_id": "resource-entity",
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "retrieved_source_ids": [
+        "otel-resource",
+        "otel-tracing-api"
+      ]
+    }
+  ],
+  "recall_at_k": 1.0
+}

@@ -38,6 +38,7 @@ packages = [
     "src/domain",
     "src/adapters",
     "src/modules",
+    "evals",
 ]
 
 [tool.ruff]

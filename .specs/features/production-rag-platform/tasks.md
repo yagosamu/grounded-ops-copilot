@@ -551,7 +551,7 @@ pagination/filter/principal propagation (`:139-147`), 401/403 authorization
 (`:161-164`), empty 200 (`:173-178`) and redacted 503 (`:186-188`). Adequacy
 A-D: PASS; all documented route outcomes have exact status and payload evidence.
 
-### T19: Establish the BM25 benchmark
+### T19: Establish the BM25 benchmark [x]
 
 **What**: Run and persist the baseline retrieval report for dataset v1.
 **Where**: `evals/retrieval/baseline.py`
@@ -561,6 +561,16 @@ A-D: PASS; all documented route outcomes have exact status and payload evidence.
 **Tests**: retrieval eval determinism and metric tests.
 **Gate**: Release.
 **Commit**: `test(retrieval): establish bm25 benchmark`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 153 tests in the coverage run, 43 release-marker tests, 91.87% total
+coverage, 98% diff coverage, zero leaks and a clean floor guard. Public seam:
+`run_benchmark(...) -> BenchmarkReport`. Literal metric/error assertions are at
+`test_retrieval_baseline.py:53-61`; determinism and config/dataset hashes at
+`:78-84`; the persisted real-OpenSearch report is verified at `:95-109`.
+Dataset v1 baseline: Recall@10 1.00, MRR 1.00, nDCG@10 1.00, p50 17 ms,
+p95 26 ms, zero errors (two queries). Adequacy A-D: PASS; the report is a measured
+baseline, not an unearned improvement claim.
 
 **Phase gate**: `make pre-push` and `make release-check`; publish BM25 benchmark artifact.
 

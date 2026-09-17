@@ -145,8 +145,8 @@ The acceptance criteria below define the testable behavior of each story.
 | FND-01 | Reproducible foundation and gates | Phase 0 complete (T01-T05) |
 | ING-01 | Idempotent ingestion | Phase 1 complete: source lifecycle, canonical versions, bounded retries and resumable orchestration (T07-T13) |
 | ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
-| RET-01 | Authorized BM25 baseline | In progress: golden dataset, index, retrieval and evidence API complete (T06, T14, T17-T18) |
-| RET-02 | Experimental retrieval promotion | Pending |
+| RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
+| RET-02 | Experimental retrieval promotion | In progress: immutable BM25 comparison baseline established (T19) |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |
 | ANS-02 | Abstention and verification | Pending |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |

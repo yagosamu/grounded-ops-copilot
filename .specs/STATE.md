@@ -19,10 +19,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 1 complete; T14 is next.
-- **Completed**: T01-T13, including reliable source ingestion, durable version history, immutable artifacts, deterministic parsing/chunking and recoverable orchestration.
+- **Phase / Task**: Phase 2 complete; T20 is next.
+- **Completed**: T01-T19, including versioned OpenSearch projection, explicit document authorization, authorized BM25 retrieval, evidence API and dataset-v1 baseline report.
 - **In-progress**: none.
-- **Next step**: Execute T14 to create versioned lexical index mappings.
+- **Next step**: Execute T20 to add versioned embedding generation without changing the BM25 default.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T13 commit.
-- **Branch**: `main`, seven commits ahead of `origin/main` after T13.
+- **Uncommitted files**: none after the T19 commit; `progress.md` remains ignored and local.
+- **Branch**: `main`; no push performed.
