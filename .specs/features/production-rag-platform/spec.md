@@ -146,14 +146,14 @@ The acceptance criteria below define the testable behavior of each story.
 | ING-01 | Idempotent ingestion | Phase 1 complete: source lifecycle, canonical versions, bounded retries and resumable orchestration (T07-T13) |
 | ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
-| RET-02 | Experimental retrieval promotion | In progress: immutable BM25 comparison baseline established (T19) |
+| RET-02 | Experimental retrieval promotion | In progress: immutable BM25 baseline and versioned embedding pipeline established (T19-T20) |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |
 | ANS-02 | Abstention and verification | Pending |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |
 | SEC-02 | Untrusted-content and secret controls | Pending |
 | AGT-01 | Bounded investigation | Pending |
 | AGT-02 | Agent promotion benchmark | Pending |
-| OPS-01 | Observability and degraded modes | In progress: ingestion retry checkpoints, redacted failures and DLQ outcomes (T13) |
+| OPS-01 | Observability and degraded modes | In progress: ingestion recovery plus bounded embedding timeout/retry failure contracts (T13, T20) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |
 | REL-01 | Pre-push and release gates | In progress: local gates and checker configuration complete (T02-T03) |
 

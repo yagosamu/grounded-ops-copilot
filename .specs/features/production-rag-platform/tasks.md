@@ -580,7 +580,7 @@ baseline, not an unearned improvement claim.
 
 **Outcome**: Dense, hybrid, reranking and chunking changes are compared fairly; only qualifying candidates become defaults.
 
-### T20: Add embedding generation with versioned metadata
+### T20: Add embedding generation with versioned metadata [x]
 
 **What**: Generate passage/query embeddings with batching, timeout, retry and model-version metadata.
 **Where**: `src/modules/embeddings/embedder.py`
@@ -590,6 +590,17 @@ baseline, not an unearned improvement claim.
 **Tests**: unit tests plus provider contract integration test.
 **Gate**: Full.
 **Commit**: `feat(embeddings): add versioned embedding pipeline`
+
+**Evidence**: `make test` passed: 160 tests, zero failures, 91.34% coverage.
+Public seams: `Embedder` and `EmbeddingProvider`; the OpenAI adapter disables SDK
+retries so batching and retries remain explicit and bounded. Unit assertions prove
+batch contents, vectors and model/version/dimension/content-hash metadata
+(`test_embedder.py:46-62`), the query contract (`:72-76`), three-attempt retry
+boundedness (`:97-98`), terminal safe errors (`:120-123`) and input bounds
+(`:132-135`). A deterministic local HTTP server verifies the real `/embeddings`
+request and indexed response ordering (`test_openai_embedding_contract.py:68-78`),
+without an API key or paid call. Adequacy A-D: PASS; all done-when outcomes have
+observable public-interface evidence, no private seams, skips or suppressions.
 
 ### T21: Build the dense retrieval candidate
 
