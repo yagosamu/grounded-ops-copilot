@@ -533,7 +533,7 @@ tenant isolation (`test_opensearch_retrieval.py:96-98`), ACL/metadata/history
 filters (`:117-121`) and dependency failure (`:138-143`). Adequacy A-D: PASS;
 fake only exercises the public adapter contract and query DSL runs on OpenSearch.
 
-### T18: Expose the evidence search route
+### T18: Expose the evidence search route [x]
 
 **What**: Add an authenticated endpoint returning policy-filtered evidence and retrieval diagnostics.
 **Where**: `src/interfaces/http/search.py`
@@ -543,6 +543,13 @@ fake only exercises the public adapter contract and query DSL runs on OpenSearch
 **Tests**: API integration tests.
 **Gate**: Full.
 **Commit**: `feat(api): expose authorized evidence search`
+
+**Evidence**: `make test` passed: 150 tests, zero failures, 91.87% coverage.
+Public seam: `GET /v1/evidence/search`. API tests assert the complete evidence and
+diagnostics payload (`test_search.py:78-101`), exact 422 validation (`:107-121`),
+pagination/filter/principal propagation (`:139-147`), 401/403 authorization
+(`:161-164`), empty 200 (`:173-178`) and redacted 503 (`:186-188`). Adequacy
+A-D: PASS; all documented route outcomes have exact status and payload evidence.
 
 ### T19: Establish the BM25 benchmark
 
