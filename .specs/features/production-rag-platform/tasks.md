@@ -299,7 +299,7 @@ Adequacy A-D: PASS under `CONSTRAINTS.md`; all outcomes observed through adapter
 results. Direct provider writes only inject corruption. No internal mocks,
 weakened tests or suppressions. Exact byte limit is a spec-precision choice.
 
-### T10: Add the initial source adapter
+### T10: Add the initial source adapter [x]
 
 **What**: Ingest Markdown files and metadata from the selected public corpus.
 **Where**: `src/adapters/sources/markdown.py`
@@ -309,6 +309,31 @@ weakened tests or suppressions. Exact byte limit is a spec-precision choice.
 **Tests**: adapter unit tests with frozen fixtures.
 **Gate**: Quick.
 **Commit**: `feat(sources): ingest markdown corpus`
+
+**Evidence**: `make check` passed: 83 unit tests, zero failures. Public seam:
+`MarkdownCorpus.scan` over frozen corpus fixtures. Files: Markdown source adapter,
+unit tests, runtime YAML dependency and task/spec status. Assumptions: SHA-256 is
+the source version; a missing first-seen fixture is malformed, while a previously
+seen source that disappears is deleted; snapshot timestamps must be timezone-aware.
+
+| Criterion | Evidence in `tests/unit/modules/test_markdown_source.py` | Outcome |
+| --- | --- | --- |
+| New, unchanged, changed and deleted | 19 exact new kinds; 28 unchanged kinds; 41-43 changed kind/version/content; 50-52 deleted kind/content/key | Every lifecycle event is deterministic |
+| Source metadata | 21-26 exact tenant, policy, license, synthetic flag, timestamp and licensed content | Complete source identity and metadata |
+| Malformed fixtures | 67-70 exact safe malformed payload for invalid UTF-8, NUL and oversized input; 86-90 path-escape payload | Invalid input never exposes content |
+| Manifest and cursor safety | 100-101 manifest error; 124 deletion tombstone; 125-128 invalid tenant/time cursor errors | Invalid snapshots never become mass deletion |
+
+| Assertion groups above | Maps to | Keep |
+| --- | --- | --- |
+| 19-52 | T10 lifecycle events, ING-01 | Yes |
+| 21-26 | Initial corpus metadata and provenance | Yes |
+| 67-101 | Spec input bounds, untrusted input and redacted failure | Yes |
+| 124-128 | T10 deletion and snapshot integrity | Yes |
+
+Adequacy A-D: PASS under `CONSTRAINTS.md` and the task coverage matrix. All
+payload fields are asserted through the public adapter result. Tests use frozen
+fixtures without live network access; none are shallow, skipped, weakened or
+unclaimed. Exact manifest and byte bounds are spec-precision choices.
 
 ### T11: Normalize and structurally parse documents
 
