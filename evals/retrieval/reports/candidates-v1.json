@@ -1,0 +1,58 @@
+{
+  "baseline": {
+    "ndcg_at_10": 1.0,
+    "query_p95_ms": 26.0,
+    "recall_at_10": 1.0,
+    "strategy": "bm25"
+  },
+  "candidates": [
+    {
+      "config_hash": "f904ada6e97bede21b5a2e97e1e57e6360454a418fa6d237b05a27e59df43bd6",
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "qualified": false,
+      "query_p50_ms": 0.18154999816033524,
+      "query_p95_ms": 0.2504449972548173,
+      "recall_at_10": 1.0,
+      "rejection": "ndcg gain below 5.00%",
+      "relative_ndcg_delta": 0.0,
+      "strategy": "dense"
+    },
+    {
+      "config_hash": "8e79083a47fa0b356e989e26a1449017a13be1e1ed939dd3ab87f81190849e4d",
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "qualified": false,
+      "query_p50_ms": 0.11475000064820051,
+      "query_p95_ms": 0.11551499992492609,
+      "recall_at_10": 1.0,
+      "rejection": "ndcg gain below 5.00%",
+      "relative_ndcg_delta": 0.0,
+      "strategy": "hybrid"
+    },
+    {
+      "config_hash": "9c79f555787db6a68c9481f084ede28981afdbc7adb5760523aa9521f51c5d80",
+      "mrr": 1.0,
+      "ndcg_at_10": 1.0,
+      "qualified": false,
+      "query_p50_ms": 0.14910000027157366,
+      "query_p95_ms": 0.1520699999673525,
+      "recall_at_10": 1.0,
+      "rejection": "ndcg gain below 3.00%",
+      "relative_ndcg_delta": 0.0,
+      "strategy": "reranker"
+    }
+  ],
+  "dataset_hash": "64348837243fe876c3e024859bb4750bd25aa64a9f348994eb97f01443bd9dac",
+  "fallback": "bm25",
+  "limitations": [
+    "dataset v1 contains only 2 golden queries",
+    "local deterministic embeddings do not represent provider embedding quality",
+    "candidate latency is not comparable with the OpenSearch BM25 baseline"
+  ],
+  "measurement_mode": "deterministic local fixture",
+  "policy": "public",
+  "production": "bm25",
+  "query_count": 2,
+  "tenant_id": "public-eval"
+}

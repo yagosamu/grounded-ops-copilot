@@ -692,7 +692,7 @@ Measured v1 quality is tied at 1.00 for every strategy; index sizes are 636 byte
 fixed, 408 structural and 402 parent-child. Adequacy A-D: PASS; timings are measured,
 not promotion claims, and the small dataset is explicit.
 
-### T25: Promote the qualifying retrieval configuration
+### T25: Promote the qualifying retrieval configuration [x]
 
 **What**: Select the default only from candidates meeting `CONSTRAINTS.md`; record rejected alternatives.
 **Where**: `docs/decisions/ADR-001-retrieval-strategy.md`
@@ -702,6 +702,18 @@ not promotion claims, and the small dataset is explicit.
 **Tests**: configuration regression eval and schema validation.
 **Gate**: Release.
 **Commit**: `docs(architecture): select measured retrieval strategy`
+
+**Evidence**: `make release-check BASE=origin/main GITLEAKS=<approved-path>`
+passed: 183 tests in the coverage run, 57 release-marker tests, 89.68% total
+coverage, 88% diff coverage, zero leaks and a clean floor guard. Public seams:
+`select_candidate` and `load_retrieval_config`. Literal threshold application,
+zero deltas, rejection reasons and BM25 production/fallback are asserted at
+`test_retrieval_promotion.py:32-44`; config strategy, structural chunking, dataset
+and immutable report hashes at `:52-60`; measured candidate report and limitations
+at `:73-91`; ADR decision, deltas and links at `:100-107`. No candidate qualifies:
+dense and hybrid gain 0.00% versus the required 5%; reranker gains 0.00% versus
+3%. Recall@10 remains 1.00. Adequacy A-D: PASS; BM25 remains production and
+fallback, with no manual promotion.
 
 **Phase gate**: `make release-check`; archive experiment artifacts and ADR; no candidate is promoted manually.
 

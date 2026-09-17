@@ -146,7 +146,7 @@ The acceptance criteria below define the testable behavior of each story.
 | ING-01 | Idempotent ingestion | Phase 1 complete: source lifecycle, canonical versions, bounded retries and resumable orchestration (T07-T13) |
 | ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
-| RET-02 | Experimental retrieval promotion | In progress: candidates and fixed/structural/parent-child experiment measured on dataset v1 (T19-T24) |
+| RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |
 | ANS-02 | Abstention and verification | Pending |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |

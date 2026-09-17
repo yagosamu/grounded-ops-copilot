@@ -19,10 +19,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 2 complete; T20 is next.
-- **Completed**: T01-T19, including versioned OpenSearch projection, explicit document authorization, authorized BM25 retrieval, evidence API and dataset-v1 baseline report.
+- **Phase / Task**: Phase 3 complete; T26 is next.
+- **Completed**: T01-T25, including versioned embeddings, dense and hybrid candidates, bounded reranking, chunking experiments and the measured BM25 production decision.
 - **In-progress**: none.
-- **Next step**: Execute T20 to add versioned embedding generation without changing the BM25 default.
+- **Next step**: Execute T26 to define grounded-answer contracts without changing the measured retrieval configuration.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T19 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T25 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.
