@@ -144,7 +144,7 @@ The acceptance criteria below define the testable behavior of each story.
 | --- | --- | --- |
 | FND-01 | Reproducible foundation and gates | Phase 0 complete (T01-T05) |
 | ING-01 | Idempotent ingestion | In progress: domain, persistence, lifecycle and frozen Markdown source events (T07-T10) |
-| ING-02 | Versioning and provenance | In progress: durable history and verified immutable artifacts (T07-T09) |
+| ING-02 | Versioning and provenance | In progress: durable history, verified artifacts and deterministic normalized spans (T07-T11) |
 | RET-01 | Authorized BM25 baseline | In progress: versioned golden dataset seeded (T06) |
 | RET-02 | Experimental retrieval promotion | Pending |
 | ANS-01 | Grounded citations | In progress: versioned golden dataset seeded (T06) |

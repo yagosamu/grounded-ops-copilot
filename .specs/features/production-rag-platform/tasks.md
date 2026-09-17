@@ -335,7 +335,7 @@ payload fields are asserted through the public adapter result. Tests use frozen
 fixtures without live network access; none are shallow, skipped, weakened or
 unclaimed. Exact manifest and byte bounds are spec-precision choices.
 
-### T11: Normalize and structurally parse documents
+### T11: Normalize and structurally parse documents [x]
 
 **What**: Convert source content into normalized sections and provenance-preserving spans.
 **Where**: `src/modules/parsing/parser.py`
@@ -345,6 +345,31 @@ unclaimed. Exact manifest and byte bounds are spec-precision choices.
 **Tests**: parser unit tests and snapshot fixtures.
 **Gate**: Quick.
 **Commit**: `feat(parsing): normalize structured documents`
+
+**Evidence**: `make check` passed: 88 unit tests, zero failures. Public seam:
+`MarkdownParser.parse(bytes) -> ParsedDocument`. Files: parser module, frozen
+Markdown/JSON snapshots, unit tests, packaging/coverage config and task/spec status.
+Assumptions: normalized spans use zero-based half-open character offsets; line
+endings normalize to LF; section text includes its heading for exact provenance.
+
+| Criterion | Evidence in `tests/unit/modules/test_parser.py` | Outcome |
+| --- | --- | --- |
+| Headings and deterministic snapshot | 21-24 exact parsed snapshot; 41 equality across repeated parses | Stable sections, titles, levels and offsets |
+| Complete span mappings | 25-28 exact slice/text equality; 43-50 preamble/heading offsets and complete reassembly | Every normalized character belongs to a source span |
+| Links, code blocks and tables | 29 exact Markdown link; 30 fenced code with heading-like content; 31 table row | Structure preserved as traceable text |
+| Malformed input | 59-62 exact safe error for invalid UTF-8, NUL and oversized bytes | Rejected without content disclosure |
+
+| Assertion groups above | Maps to | Keep |
+| --- | --- | --- |
+| 21-31 | T11 structural parsing, ING-02 | Yes |
+| 41-50 | T11 determinism, normalization and span completeness | Yes |
+| 59-62 | Spec input bounds and redacted failure | Yes |
+
+Adequacy A-D: PASS under `CONSTRAINTS.md` and the task coverage matrix. All
+assertions observe the parser's public immutable result; the snapshot literals
+derive from the frozen fixture, not parser internals. No shallow, skipped,
+weakened or unclaimed tests. Offset units and section ownership are
+spec-precision choices.
 
 ### T12: Implement baseline structural chunking
 

@@ -1,0 +1,19 @@
+{
+  "parser_version": "markdown-1",
+  "sections": [
+    {
+      "title": "Tracing Guide",
+      "level": 1,
+      "text": "# Tracing Guide\n\nRead the [API reference](https://opentelemetry.io/docs/).\n\n",
+      "start": 0,
+      "end": 76
+    },
+    {
+      "title": "Example",
+      "level": 2,
+      "text": "## Example\n\n```python\n# this is code, not a heading\ntracer.start_as_current_span(\"work\")\n```\n\n| Signal | Stable |\n| --- | --- |\n| traces | yes |\n",
+      "start": 76,
+      "end": 221
+    }
+  ]
+}
