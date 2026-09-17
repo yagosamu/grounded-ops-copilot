@@ -371,7 +371,7 @@ derive from the frozen fixture, not parser internals. No shallow, skipped,
 weakened or unclaimed tests. Offset units and section ownership are
 spec-precision choices.
 
-### T12: Implement baseline structural chunking
+### T12: Implement baseline structural chunking [x]
 
 **What**: Produce deterministic chunks with token bounds and complete provenance.
 **Where**: `src/modules/chunking/structural.py`
@@ -381,6 +381,32 @@ spec-precision choices.
 **Tests**: property and unit tests for boundaries, tiny sections and oversized code blocks.
 **Gate**: Quick.
 **Commit**: `feat(chunking): add provenance-preserving chunks`
+
+**Evidence**: `make check` passed: 94 unit tests, zero failures. Public seam:
+`StructuralChunker(max_tokens).chunk(ParsedDocument)`. Files: structural chunker,
+unit/property tests and task/spec status. Assumptions: non-whitespace runs are the
+deterministic v1 token proxy; `max_tokens` is a hard bound; zero-based half-open
+normalized character spans preserve provenance across parser and chunker versions.
+
+| Criterion | Evidence in `tests/unit/modules/test_structural_chunking.py` | Outcome |
+| --- | --- | --- |
+| Token bounds and versioned provenance | 30-33 exact counts, max bound and parser/chunker versions | Every chunk is bounded and versioned |
+| No lost source spans | 12-20 exact text reassembly, ordinals, first/last offsets, adjacency and non-empty slices; invoked at 34, 48, 61 and 74 | Full normalized document provenance |
+| Tiny sections | 42-48 one bounded chunk with both exact heading spans | Structural boundaries retained |
+| Oversized code blocks | 58-61 exact split counts and fence endpoints | Deterministic bounded split without text loss |
+| Stability/property range | 72-74 equality, bound and provenance for 40 document lengths | Identical inputs produce identical chunks |
+| Invalid bounds | 79-80 exact validation error | Non-positive configuration rejected |
+
+| Assertion groups above | Maps to | Keep |
+| --- | --- | --- |
+| 12-34 | T12 bounds, complete provenance and ING-02 versions | Yes |
+| 42-61 | T12 tiny-section and oversized-code edge cases | Yes |
+| 72-80 | T12 stability, property coverage and configured bounds | Yes |
+
+Adequacy A-D: PASS under `CONSTRAINTS.md` and the task coverage matrix. Tests
+exercise parser and chunker public seams with exact output/state assertions; no
+internal collaborators are mocked. No shallow, skipped, weakened or unclaimed
+tests. The v1 token proxy is a documented spec-precision choice.
 
 ### T13: Orchestrate idempotent ingestion
 
