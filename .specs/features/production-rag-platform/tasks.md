@@ -459,7 +459,7 @@ unclaimed tests. Retry scheduling is a documented spec-precision choice.
 
 **Outcome**: A user can retrieve authorized evidence and receive a minimal cited response without embeddings or agents.
 
-### T14: Create versioned lexical index mappings
+### T14: Create versioned lexical index mappings [x]
 
 **What**: Define analyzers, fields, tenant policy fields and aliases for the BM25 index.
 **Where**: `src/adapters/opensearch/index_schema.py`
@@ -469,6 +469,13 @@ unclaimed tests. Retry scheduling is a documented spec-precision choice.
 **Tests**: OpenSearch integration tests.
 **Gate**: Full.
 **Commit**: `feat(search): define versioned lexical index`
+
+**Evidence**: `make test` passed: 126 tests, zero failures, 90.28% coverage.
+Public seam: `LexicalIndexSchema.ensure`. Real OpenSearch tests prove analyzer and
+policy mappings (`test_opensearch_index_schema.py:28-34`), idempotency (`:42`) and
+rejection of an incompatible physical index (`:55`). The fingerprint is stored in
+mapping metadata; schema changes require a new physical version. Adequacy A-D:
+PASS, with exact observable mapping/alias assertions and no mocks or suppressions.
 
 ### T15: Index and remove document versions
 

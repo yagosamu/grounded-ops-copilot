@@ -9,6 +9,7 @@ import boto3
 import pytest
 from botocore.config import Config
 from mypy_boto3_s3 import S3Client
+from opensearchpy import OpenSearch
 from sqlalchemy import URL, Engine, create_engine, text
 
 from adapters.postgres.migrations import migrate
@@ -143,3 +144,50 @@ def artifact_bucket(s3_client: S3Client) -> str:
     bucket = f"artifacts-{uuid4().hex}"
     s3_client.create_bucket(Bucket=bucket)
     return bucket
+
+
+@pytest.fixture(scope="session")
+def opensearch_client() -> Iterator[OpenSearch]:
+    environment = os.environ | {
+        "TEST_POSTGRES_PASSWORD": uuid4().hex,
+        "TEST_MINIO_USER": uuid4().hex,
+        "TEST_MINIO_PASSWORD": uuid4().hex,
+    }
+    command = [
+        "docker",
+        "compose",
+        "-f",
+        "tests/integration/compose.yml",
+        "-p",
+        f"grounded-test-{uuid4().hex[:12]}",
+    ]
+    try:
+        subprocess.run(
+            command + ["up", "-d", "--wait", "opensearch"],
+            env=environment,
+            check=True,
+            capture_output=True,
+        )
+        result = subprocess.run(
+            command + ["port", "opensearch", "9200"],
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        port = int(result.stdout.strip().rsplit(":", 1)[1])
+        client = OpenSearch(
+            hosts=[{"host": "127.0.0.1", "port": port}],
+            use_ssl=False,
+            timeout=5,
+            max_retries=1,
+        )
+        yield client
+        client.close()
+    finally:
+        subprocess.run(
+            command + ["down", "--volumes"],
+            env=environment,
+            check=True,
+            capture_output=True,
+        )

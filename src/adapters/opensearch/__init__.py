@@ -1,0 +1,1 @@
+"""OpenSearch projection adapters."""
