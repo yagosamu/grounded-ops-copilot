@@ -39,6 +39,9 @@ crash.log
 test-results/
 playwright-report/
 
+# Local interview notes
+/progress.md
+
 # Editors and operating systems
 .idea/
 .vscode/
