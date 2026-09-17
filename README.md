@@ -65,10 +65,3 @@ The initial corpus combines public OpenTelemetry documentation and GitHub
 artifacts with clearly identified synthetic company runbooks, ADRs and
 postmortems. This keeps the project reproducible while allowing controlled
 authorization, version-conflict and incident scenarios.
-
-## Inspiration
-
-The development sequence is informed by the
-[Production Agentic RAG course](https://github.com/jamwithai/production-agentic-rag-course),
-but GroundedOps has its own product domain, architecture, evaluation strategy and
-production constraints.
