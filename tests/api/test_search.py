@@ -3,11 +3,12 @@
 from datetime import UTC, datetime
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from interfaces.http.auth import PrincipalDependency
 from interfaces.http.search import create_search_router
-from modules.policy.authorizer import AuthorizationReason
+from modules.policy.authorizer import AuthorizationReason, Principal
 from modules.retrieval.retriever import (
     Evidence,
     EvidenceSet,
@@ -28,9 +29,9 @@ class FakeRetriever:
         return self.result
 
 
-def client(retriever: FakeRetriever) -> TestClient:
+def client(retriever: FakeRetriever, authenticator: PrincipalDependency) -> TestClient:
     app = FastAPI()
-    app.include_router(create_search_router(retriever))
+    app.include_router(create_search_router(retriever, authenticator))
     return TestClient(app)
 
 
@@ -61,18 +62,16 @@ def evidence_set() -> EvidenceSet:
     )
 
 
-HEADERS = {
-    "X-Principal-Id": "alice",
-    "X-Tenant-Id": "alpha",
-    "X-Roles": "engineer,reader",
-    "X-Groups": "oncall",
-}
+def reject_unknown_principal() -> Principal:
+    raise HTTPException(status_code=403, detail="principal unauthorized")
 
 
 @pytest.mark.api
-def test_returns_authorized_evidence_and_diagnostics() -> None:
-    response = client(FakeRetriever(evidence_set())).get(
-        "/v1/evidence/search", params={"q": "tracer provider"}, headers=HEADERS
+def test_returns_authorized_evidence_and_diagnostics(auth_context) -> None:
+    response = client(FakeRetriever(evidence_set()), auth_context.authenticator).get(
+        "/v1/evidence/search",
+        params={"q": "tracer provider"},
+        headers=auth_context.headers(),
     )
 
     assert response.status_code == 200
@@ -101,8 +100,9 @@ def test_returns_authorized_evidence_and_diagnostics() -> None:
 
 
 @pytest.mark.api
-def test_validates_query_and_pagination_bounds() -> None:
-    api = client(FakeRetriever(evidence_set()))
+def test_validates_query_and_pagination_bounds(auth_context) -> None:
+    api = client(FakeRetriever(evidence_set()), auth_context.authenticator)
+    HEADERS = auth_context.headers()
 
     assert api.get("/v1/evidence/search", headers=HEADERS).status_code == 422
     assert (
@@ -120,10 +120,10 @@ def test_validates_query_and_pagination_bounds() -> None:
 
 
 @pytest.mark.api
-def test_passes_pagination_and_filters_to_retrieval() -> None:
+def test_passes_pagination_and_filters_to_retrieval(auth_context) -> None:
     retriever = FakeRetriever(evidence_set())
 
-    response = client(retriever).get(
+    response = client(retriever, auth_context.authenticator).get(
         "/v1/evidence/search",
         params={
             "q": "tracer",
@@ -133,7 +133,7 @@ def test_passes_pagination_and_filters_to_retrieval() -> None:
             "document_id": "doc-1",
             "include_historical": True,
         },
-        headers=HEADERS,
+        headers=auth_context.headers(),
     )
 
     assert response.status_code == 200
@@ -148,26 +148,38 @@ def test_passes_pagination_and_filters_to_retrieval() -> None:
 
 
 @pytest.mark.api
-def test_rejects_missing_or_unknown_principal() -> None:
-    api = client(FakeRetriever(evidence_set()))
+def test_rejects_missing_principal(auth_context) -> None:
+    api = client(FakeRetriever(evidence_set()), auth_context.authenticator)
 
     missing = api.get("/v1/evidence/search", params={"q": "tracer"})
-    unknown = api.get(
+    malformed = api.get(
         "/v1/evidence/search",
         params={"q": "tracer"},
-        headers=HEADERS | {"X-Principal-Known": "false"},
+        headers={"Authorization": "Bearer not-a-jwt"},
+    )
+    unknown = client(FakeRetriever(evidence_set()), reject_unknown_principal).get(
+        "/v1/evidence/search",
+        params={"q": "tracer"},
+        headers=auth_context.headers(),
     )
 
     assert missing.status_code == 401
     assert missing.json() == {"detail": "authentication required"}
+    assert missing.headers["www-authenticate"] == "Bearer"
+    assert malformed.status_code == 401
+    assert malformed.json() == {"detail": "invalid credentials"}
     assert unknown.status_code == 403
     assert unknown.json() == {"detail": "principal unauthorized"}
 
 
 @pytest.mark.api
-def test_returns_empty_success() -> None:
-    response = client(FakeRetriever(EvidenceSet((), "bm25", 0, 4))).get(
-        "/v1/evidence/search", params={"q": "missing"}, headers=HEADERS
+def test_returns_empty_success(auth_context) -> None:
+    response = client(
+        FakeRetriever(EvidenceSet((), "bm25", 0, 4)), auth_context.authenticator
+    ).get(
+        "/v1/evidence/search",
+        params={"q": "missing"},
+        headers=auth_context.headers(),
     )
 
     assert response.status_code == 200
@@ -178,9 +190,14 @@ def test_returns_empty_success() -> None:
 
 
 @pytest.mark.api
-def test_returns_redacted_dependency_failure() -> None:
-    response = client(FakeRetriever(RetrievalUnavailable("private endpoint"))).get(
-        "/v1/evidence/search", params={"q": "tracer"}, headers=HEADERS
+def test_returns_redacted_dependency_failure(auth_context) -> None:
+    response = client(
+        FakeRetriever(RetrievalUnavailable("private endpoint")),
+        auth_context.authenticator,
+    ).get(
+        "/v1/evidence/search",
+        params={"q": "tracer"},
+        headers=auth_context.headers(),
     )
 
     assert response.status_code == 503

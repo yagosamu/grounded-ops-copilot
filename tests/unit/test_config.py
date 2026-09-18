@@ -21,6 +21,30 @@ def test_application_factory_creates_fastapi_app() -> None:
     assert app.title == "GroundedOps"
 
 
+def test_application_factory_fails_closed_without_authentication() -> None:
+    application = importlib.import_module("grounded_ops.app")
+
+    with pytest.raises(ValueError, match="protected routes require an authenticator"):
+        application.create_app(retriever=object())
+
+
+def test_application_factory_mounts_protected_routes_with_authentication() -> None:
+    application = importlib.import_module("grounded_ops.app")
+    authorizer = importlib.import_module("modules.policy.authorizer")
+
+    def authenticate() -> object:
+        return authorizer.Principal("alice", "alpha", (), ())
+
+    app = application.create_app(
+        retriever=object(), ask_executor=object(), authenticator=authenticate
+    )
+
+    assert set(app.openapi()["paths"]) >= {
+        "/v1/evidence/search",
+        "/v1/ask",
+    }
+
+
 def test_project_declares_python_313_requirement() -> None:
     project_file = pathlib.Path("pyproject.toml")
 

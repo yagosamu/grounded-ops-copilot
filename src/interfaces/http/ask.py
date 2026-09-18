@@ -8,11 +8,12 @@ from time import sleep
 from typing import Annotated, Protocol
 from uuid import uuid4
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from domain.answering import AnswerUsage, GroundedAnswer, Question
+from interfaces.http.auth import PrincipalDependency
 from modules.answering.abstention import AbstentionDecider, AbstentionDecision
 from modules.answering.context_packer import ContextPacker, PackedContext
 from modules.answering.generator import (
@@ -182,30 +183,17 @@ class AskBody(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
 
 
-def _csv(value: str) -> tuple[str, ...]:
-    return tuple(item.strip() for item in value.split(",") if item.strip())
-
-
-def create_ask_router(executor: AskExecutor) -> APIRouter:
+def create_ask_router(
+    executor: AskExecutor, authenticate: PrincipalDependency
+) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["answering"])
 
     @router.post("/ask")
     async def ask(
         body: AskBody,
         request: Request,
-        principal_id: Annotated[str | None, Header(alias="X-Principal-Id")] = None,
-        tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
-        roles: Annotated[str, Header(alias="X-Roles")] = "",
-        groups: Annotated[str, Header(alias="X-Groups")] = "",
-        principal_known: Annotated[bool, Header(alias="X-Principal-Known")] = True,
+        principal: Annotated[Principal, Depends(authenticate)],
     ) -> StreamingResponse:
-        if principal_id is None or tenant_id is None:
-            raise HTTPException(status_code=401, detail="authentication required")
-        if not principal_known:
-            raise HTTPException(status_code=403, detail="principal unauthorized")
-        principal = Principal(
-            principal_id, tenant_id, _csv(roles), _csv(groups), principal_known
-        )
         question = Question(str(uuid4()), body.question)
         session = executor.start(question, principal)
         return StreamingResponse(

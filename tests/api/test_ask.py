@@ -6,11 +6,12 @@ from datetime import UTC, datetime
 
 import anyio
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from domain.answering import Question
 from interfaces.http.ask import AskEvent, AskService, AskSession, create_ask_router
+from interfaces.http.auth import PrincipalDependency
 from modules.answering.abstention import AbstentionDecider
 from modules.answering.context_packer import ContextPacker
 from modules.answering.generator import (
@@ -26,13 +27,6 @@ from modules.answering.generator import (
 from modules.answering.verifier import CitationVerifier
 from modules.policy.authorizer import AuthorizationReason, Principal
 from modules.retrieval.retriever import Evidence, EvidenceSet, QueryContext
-
-HEADERS = {
-    "X-Principal-Id": "alice",
-    "X-Tenant-Id": "alpha",
-    "X-Roles": "engineer",
-    "X-Groups": "oncall",
-}
 
 
 def evidence() -> Evidence:
@@ -119,9 +113,9 @@ def ask_service(
     )
 
 
-def client(service: AskService) -> TestClient:
+def client(service: AskService, authenticator: PrincipalDependency) -> TestClient:
     app = FastAPI()
-    app.include_router(create_ask_router(service))
+    app.include_router(create_ask_router(service, authenticator))
     return TestClient(app)
 
 
@@ -129,15 +123,21 @@ def events(response_text: str) -> list[dict[str, object]]:
     return [json.loads(line) for line in response_text.splitlines()]
 
 
+def reject_unknown_principal() -> Principal:
+    raise HTTPException(status_code=403, detail="principal unauthorized")
+
+
 @pytest.mark.api
-def test_streams_unverified_delta_then_a_verified_final_answer() -> None:
+def test_streams_unverified_delta_then_a_verified_final_answer(auth_context) -> None:
     provider = FakeStreamingProvider(
         [(GenerationDelta("TracerProvider provides "), completed())]
     )
     service, retriever = ask_service(EvidenceSet((evidence(),), "bm25", 1, 3), provider)
 
-    response = client(service).post(
-        "/v1/ask", json={"question": "What provides access?"}, headers=HEADERS
+    response = client(service, auth_context.authenticator).post(
+        "/v1/ask",
+        json={"question": "What provides access?"},
+        headers=auth_context.headers(),
     )
     payloads = events(response.text)
 
@@ -181,12 +181,16 @@ def test_streams_unverified_delta_then_a_verified_final_answer() -> None:
 
 
 @pytest.mark.api
-def test_streams_abstention_without_calling_generation_for_empty_evidence() -> None:
+def test_streams_abstention_without_calling_generation_for_empty_evidence(
+    auth_context,
+) -> None:
     provider = FakeStreamingProvider([])
     service, _ = ask_service(EvidenceSet((), "bm25", 0, 2), provider)
 
-    response = client(service).post(
-        "/v1/ask", json={"question": "What is missing?"}, headers=HEADERS
+    response = client(service, auth_context.authenticator).post(
+        "/v1/ask",
+        json={"question": "What is missing?"},
+        headers=auth_context.headers(),
     )
     payloads = events(response.text)
 
@@ -202,13 +206,15 @@ def test_streams_abstention_without_calling_generation_for_empty_evidence() -> N
 
 
 @pytest.mark.api
-def test_streams_timeout_as_provider_failure_not_abstention() -> None:
+def test_streams_timeout_as_provider_failure_not_abstention(auth_context) -> None:
     timeout = GenerationProviderError(GenerationFailure.TIMEOUT, retryable=True)
     provider = FakeStreamingProvider([timeout, timeout])
     service, _ = ask_service(EvidenceSet((evidence(),), "bm25", 1, 2), provider)
 
-    response = client(service).post(
-        "/v1/ask", json={"question": "Will this time out?"}, headers=HEADERS
+    response = client(service, auth_context.authenticator).post(
+        "/v1/ask",
+        json={"question": "Will this time out?"},
+        headers=auth_context.headers(),
     )
     payloads = events(response.text)
 
@@ -223,7 +229,7 @@ def test_streams_timeout_as_provider_failure_not_abstention() -> None:
 
 
 @pytest.mark.api
-def test_marks_embedding_failure_as_explicit_bm25_degraded_mode() -> None:
+def test_marks_embedding_failure_as_explicit_bm25_degraded_mode(auth_context) -> None:
     provider = FakeStreamingProvider([(completed(),)])
     result = EvidenceSet(
         (evidence(),),
@@ -235,8 +241,10 @@ def test_marks_embedding_failure_as_explicit_bm25_degraded_mode() -> None:
     )
     service, _ = ask_service(result, provider)
 
-    response = client(service).post(
-        "/v1/ask", json={"question": "What provides access?"}, headers=HEADERS
+    response = client(service, auth_context.authenticator).post(
+        "/v1/ask",
+        json={"question": "What provides access?"},
+        headers=auth_context.headers(),
     )
 
     assert events(response.text)[-1]["degraded"] == {
@@ -247,20 +255,27 @@ def test_marks_embedding_failure_as_explicit_bm25_degraded_mode() -> None:
 
 
 @pytest.mark.api
-def test_rejects_missing_unknown_or_invalid_authenticated_requests() -> None:
+def test_rejects_missing_or_invalid_authenticated_requests(auth_context) -> None:
     service, _ = ask_service(EvidenceSet((), "bm25", 0, 1), FakeStreamingProvider([]))
-    api = client(service)
+    api = client(service, auth_context.authenticator)
 
     missing = api.post("/v1/ask", json={"question": "hello"})
-    unknown = api.post(
+    malformed = api.post(
         "/v1/ask",
         json={"question": "hello"},
-        headers=HEADERS | {"X-Principal-Known": "false"},
+        headers={"Authorization": "Bearer not-a-jwt"},
     )
-    invalid = api.post("/v1/ask", json={"question": ""}, headers=HEADERS)
+    invalid = api.post("/v1/ask", json={"question": ""}, headers=auth_context.headers())
+    unknown = client(service, reject_unknown_principal).post(
+        "/v1/ask",
+        json={"question": "hello"},
+        headers=auth_context.headers(),
+    )
 
     assert missing.status_code == 401
     assert missing.json() == {"detail": "authentication required"}
+    assert malformed.status_code == 401
+    assert malformed.json() == {"detail": "invalid credentials"}
     assert unknown.status_code == 403
     assert unknown.json() == {"detail": "principal unauthorized"}
     assert invalid.status_code == 422
@@ -284,7 +299,7 @@ def test_cancelled_session_stops_before_generation() -> None:
 
 
 @pytest.mark.api
-def test_asgi_client_disconnect_cancels_the_request_session() -> None:
+def test_asgi_client_disconnect_cancels_the_request_session(auth_context) -> None:
     class TrackingExecutor:
         session: AskSession | None = None
 
@@ -298,7 +313,7 @@ def test_asgi_client_disconnect_cancels_the_request_session() -> None:
 
     executor = TrackingExecutor()
     app = FastAPI()
-    app.include_router(create_ask_router(executor))
+    app.include_router(create_ask_router(executor, auth_context.authenticator))
     body = json.dumps({"question": "What provides access?"}).encode()
     messages: list[dict[str, object]] = [
         {"type": "http.request", "body": body, "more_body": False},
@@ -314,6 +329,7 @@ def test_asgi_client_disconnect_cancels_the_request_session() -> None:
     async def send(message: dict[str, object]) -> None:
         sent.append(message)
 
+    authorization = f"Bearer {auth_context.token()}".encode()
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
@@ -327,8 +343,7 @@ def test_asgi_client_disconnect_cancels_the_request_session() -> None:
         "headers": [
             (b"content-type", b"application/json"),
             (b"content-length", str(len(body)).encode()),
-            (b"x-principal-id", b"alice"),
-            (b"x-tenant-id", b"alpha"),
+            (b"authorization", authorization),
         ],
         "client": ("127.0.0.1", 1234),
         "server": ("testserver", 80),

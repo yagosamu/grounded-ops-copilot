@@ -3,9 +3,10 @@
 from datetime import datetime
 from typing import Annotated, Protocol
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from interfaces.http.auth import PrincipalDependency
 from modules.policy.authorizer import Principal
 from modules.retrieval.retriever import EvidenceSet, QueryContext, RetrievalUnavailable
 
@@ -43,10 +44,6 @@ class SearchResponse(BaseModel):
     diagnostics: DiagnosticsResponse
 
 
-def _csv(value: str) -> tuple[str, ...]:
-    return tuple(item.strip() for item in value.split(",") if item.strip())
-
-
 def _response(result: EvidenceSet) -> SearchResponse:
     return SearchResponse(
         evidence=[
@@ -75,30 +72,21 @@ def _response(result: EvidenceSet) -> SearchResponse:
     )
 
 
-def create_search_router(retriever: Retriever) -> APIRouter:
+def create_search_router(
+    retriever: Retriever, authenticate: PrincipalDependency
+) -> APIRouter:
     router = APIRouter(prefix="/v1/evidence", tags=["evidence"])
 
     @router.get("/search", response_model=SearchResponse)
     def search(
         q: Annotated[str, Query(min_length=1, max_length=1000)],
-        principal_id: Annotated[str | None, Header(alias="X-Principal-Id")] = None,
-        tenant_id: Annotated[str | None, Header(alias="X-Tenant-Id")] = None,
-        roles: Annotated[str, Header(alias="X-Roles")] = "",
-        groups: Annotated[str, Header(alias="X-Groups")] = "",
-        principal_known: Annotated[bool, Header(alias="X-Principal-Known")] = True,
+        principal: Annotated[Principal, Depends(authenticate)],
         limit: Annotated[int, Query(ge=1, le=100)] = 10,
         offset: Annotated[int, Query(ge=0, le=10_000)] = 0,
         source_id: Annotated[list[str] | None, Query()] = None,
         document_id: Annotated[list[str] | None, Query()] = None,
         include_historical: bool = False,
     ) -> SearchResponse:
-        if principal_id is None or tenant_id is None:
-            raise HTTPException(status_code=401, detail="authentication required")
-        if not principal_known:
-            raise HTTPException(status_code=403, detail="principal unauthorized")
-        principal = Principal(
-            principal_id, tenant_id, _csv(roles), _csv(groups), principal_known
-        )
         try:
             result = retriever.retrieve(
                 QueryContext(

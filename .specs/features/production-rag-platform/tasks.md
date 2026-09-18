@@ -886,7 +886,7 @@ inspection confirmed grounded direct, abstention and difficult multi-source case
 
 **Outcome**: Authorization is enforced before retrieval and generation, with adversarial evidence of isolation.
 
-### T33: Authenticate principals and tenant context
+### T33: Authenticate principals and tenant context [x]
 
 **What**: Validate identity and construct immutable principal context for every protected route.
 **Where**: `src/interfaces/http/auth.py`
@@ -896,6 +896,18 @@ inspection confirmed grounded direct, abstention and difficult multi-source case
 **Tests**: API authentication tests.
 **Gate**: Full.
 **Commit**: `feat(security): authenticate tenant principals`
+
+**Evidence**: `make test` and `make pre-push` pass in the final T33 state. The
+Bearer boundary validates signature, a configured algorithm allowlist, expiration,
+issuer and audience before constructing the frozen `Principal`; identity, tenant,
+roles and groups can no longer be supplied through trusted-looking request headers.
+API tests prove valid immutable context plus missing, malformed, expired,
+wrong-audience, wrong-issuer, wrong-signature, disallowed-algorithm and invalid-claim
+outcomes in `test_auth.py`. Existing `Search` and `Ask` API suites now use signed
+credentials, while `test_config.py` proves the application refuses to mount either
+protected route without an authenticator. Adequacy A-D: PASS under
+`CONSTRAINTS.md`; authentication fails closed with a generic 401 and Bearer
+challenge without disclosing validation details.
 
 ### T34: Enforce document policies in storage and search
 

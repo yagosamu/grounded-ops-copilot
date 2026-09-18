@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 4 complete through T32; Phase 5 / T33 is next.
-- **Completed**: T01-T32, including the live answer benchmark and promotion of GPT-4o Mini for generation v1.
+- **Phase / Task**: Phase 5 in progress; T33 complete and T34 is next.
+- **Completed**: T01-T33, including strict Bearer authentication and immutable tenant principal context for protected routes.
 - **In-progress**: none.
-- **Next step**: T33, authenticate principals and construct immutable tenant context for protected routes.
+- **Next step**: T34, enforce the same document policy across storage, search and citation resolution.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T32 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T33 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.
