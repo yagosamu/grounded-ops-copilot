@@ -855,7 +855,7 @@ plus redacted `incomplete`/`error` classification at `:245-257`. Adequacy A-D:
 PASS under `CONSTRAINTS.md`; every route/failure criterion has observable payload
 evidence and generation cannot emit verified status before deterministic verification.
 
-### T32: Establish the answer benchmark
+### T32: Establish the answer benchmark [x]
 
 **What**: Compare GPT-5 nano, GPT-4o Mini and GPT-5.6 Luna on citation coverage, citation validity, abstention, task success, latency and cost; run Terra only as an upper bound on the difficult subset.
 **Where**: `evals/answering/benchmark.py`
@@ -865,6 +865,18 @@ evidence and generation cannot emit verified status before deterministic verific
 **Tests**: evaluator metric and repeatability tests.
 **Gate**: Release.
 **Commit**: `test(answering): establish grounded answer benchmark`
+
+**Evidence**: `make release-check` passed with 159 unit tests, 234 tests in the
+coverage run, 75 release-marker tests, 89.68% total coverage, 91% diff coverage,
+zero leaks and a clean floor guard. The live Responses API report covers four
+versioned cases with deterministic `expected-facts-v1` judgments and exact
+per-case citations. GPT-4o Mini qualified with 100% task success, 100% citation
+coverage, zero invalid citations, 100% abstention accuracy, $0.0002979 total
+measured cost and 2.508 s p95. It reduced cost by 45.76% versus the GPT-5.6 Luna
+baseline while preserving quality. GPT-5 nano was rejected on cost, and Terra
+remained an upper bound for the difficult subset. The evaluator and promotion
+policy are exercised at `test_answer_benchmark.py:78-181`; a stratified manual
+inspection confirmed grounded direct, abstention and difficult multi-source cases.
 
 **Phase gate**: `make release-check`; manually inspect a stratified sample; publish the answer benchmark.
 

@@ -1,0 +1,41 @@
+dataset_id: groundedops-answering-v1
+version: 1
+judge_version: expected-facts-v1
+sources:
+  - id: otel-tracing-api
+    fixture: ../datasets/v1/sources/tracing-api.md
+    document_id: otel-tracing-api
+    document_version_id: otel-tracing-api-v1
+  - id: otel-resource
+    fixture: ../datasets/v1/sources/resource.md
+    document_id: otel-resource
+    document_version_id: otel-resource-v1
+cases:
+  - id: tracing-components
+    question: Which OpenTelemetry component provides access to tracers?
+    evidence_source_ids: [otel-tracing-api]
+    expected_facts:
+      - TracerProvider provides access to Tracer
+    should_abstain: false
+    difficult: false
+  - id: resource-entity
+    question: What does an OpenTelemetry Resource represent?
+    evidence_source_ids: [otel-resource]
+    expected_facts:
+      - Resource represents the entity producing telemetry
+    should_abstain: false
+    difficult: false
+  - id: missing-collector-port
+    question: Which network port must an OpenTelemetry Collector use?
+    evidence_source_ids: []
+    expected_facts: []
+    should_abstain: true
+    difficult: false
+  - id: cross-source-summary
+    question: State what a Resource represents and what provides access to Tracers.
+    evidence_source_ids: [otel-resource, otel-tracing-api]
+    expected_facts:
+      - Resource represents the entity producing telemetry
+      - TracerProvider provides access to Tracer
+    should_abstain: false
+    difficult: true

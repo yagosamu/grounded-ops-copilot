@@ -15,14 +15,15 @@
 | AD-009 | active | A geração v1 usará a OpenAI atrás de uma interface própria; GPT-5 nano, GPT-4o Mini e GPT-5.6 Luna competirão na mesma suíte e o modelo mais barato que passar todos os gates será promovido; Terra será apenas upper bound em casos difíceis | Evita pagar por capacidade não demonstrada e transforma seleção de modelo em uma decisão reproduzível orientada por qualidade e custo |
 | AD-010 | active | AWS será o cloud-alvo e Terraform será a IaC; haverá um perfil Pilot econômico e um perfil Production HA multi-AZ, enquanto desenvolvimento local continuará em Docker Compose | Permite demonstrar uma implantação real e reproduzível sem manter redundância cara antes de existirem usuários que a justifiquem |
 | AD-011 | active | O contrato de qualidade usará bloqueio progressivo, invariantes fixos, ratchets medidos e gates com orçamentos de 30 s, 90 s, 5 min e 15 min | Mantém o rigor necessário para produção sem incentivar que checks lentos sejam ignorados; complexidade e limites dependentes do workload passam a bloquear somente após evidência representativa |
+| AD-012 | active | Promover GPT-4o Mini para geração v1 e manter GPT-5.6 Luna como baseline medido | GPT-4o Mini preservou 100% de sucesso, citações e abstention no dataset v1 com custo 45,76% menor; Nano custou mais e Terra permaneceu apenas como upper bound |
 
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 4 in progress; T26-T31 complete and T32 blocked.
-- **Completed**: T01-T31, including bounded context, structured Responses generation, exact claim citation verification, calibrated abstention and verified streaming Ask.
-- **In-progress**: none; T32 has no partial implementation or benchmark artifact.
-- **Next step**: Provide `OPENAI_API_KEY`, then execute the real T32 benchmark for GPT-5 nano, GPT-4o Mini, GPT-5.6 Luna and the Terra difficult subset.
-- **Blockers**: `OPENAI_API_KEY` is absent; T32 requires real model outputs and cannot use fabricated or substitute results.
-- **Uncommitted files**: none after the T31 commit; `progress.md` remains ignored and local.
+- **Phase / Task**: Phase 4 complete through T32; Phase 5 / T33 is next.
+- **Completed**: T01-T32, including the live answer benchmark and promotion of GPT-4o Mini for generation v1.
+- **In-progress**: none.
+- **Next step**: T33, authenticate principals and construct immutable tenant context for protected routes.
+- **Blockers**: none.
+- **Uncommitted files**: none after the T32 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

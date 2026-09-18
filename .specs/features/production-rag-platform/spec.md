@@ -147,8 +147,8 @@ The acceptance criteria below define the testable behavior of each story.
 | ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
-| ANS-01 | Grounded citations | In progress: verified streaming Ask complete; real multi-model benchmark pending (T06, T26-T31; T32 pending) |
-| ANS-02 | Abstention and verification | In progress: deterministic verification and calibrated streaming abstention complete; real benchmark pending (T26, T29-T31; T32 pending) |
+| ANS-01 | Grounded citations | Complete: verified streaming Ask and live multi-model benchmark promote GPT-4o Mini with 100% citation coverage and zero invalid citations (T06, T26-T32) |
+| ANS-02 | Abstention and verification | Complete: deterministic verification, calibrated abstention and live benchmark achieve 100% abstention accuracy on dataset v1 (T26, T29-T32) |
 | SEC-01 | Tenant/document isolation | In progress: explicit policy plus tenant/ACL-filtered retrieval complete (T16-T17) |
 | SEC-02 | Untrusted-content and secret controls | Pending |
 | AGT-01 | Bounded investigation | Pending |

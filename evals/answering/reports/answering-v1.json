@@ -1,0 +1,516 @@
+{
+  "baseline_model": "gpt-5.6-luna",
+  "dataset_hash": "924c8e90a846f7bb9109a18cd91e964621cf596b891af72d88496621e9e26919",
+  "judge_version": "expected-facts-v1",
+  "limitations": [
+    "dataset v1 contains four cases and two short public source excerpts",
+    "latency is a local sequential measurement, not a production load test",
+    "expected-facts-v1 is a deterministic lexical judge"
+  ],
+  "measurement_mode": "live OpenAI Responses API; sequential local execution",
+  "models": [
+    {
+      "abstention_accuracy": 1.0,
+      "case_count": 4,
+      "cases": [
+        {
+          "abstention_correct": null,
+          "case_id": "tracing-components",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "The Tracing API consists of these main components: `TracerProvider` provides access to `Tracer`s, and a `Tracer` creates `Span`s."
+          ],
+          "cost_usd": 0.00032175,
+          "error": null,
+          "evidence_ids": [
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 339,
+          "latency_ms": 8735.40070001036,
+          "output_tokens": 762,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "resource-entity",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes."
+          ],
+          "cost_usd": 0.00022625,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 309,
+          "latency_ms": 3531.941099994583,
+          "output_tokens": 527,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": true,
+          "case_id": "missing-collector-port",
+          "citation_count": 0,
+          "citations": [],
+          "claims": [],
+          "cost_usd": 0.0,
+          "error": null,
+          "evidence_ids": [],
+          "expected_fact_matches": [],
+          "input_tokens": 0,
+          "latency_ms": 0.0,
+          "output_tokens": 0,
+          "status": "abstained",
+          "task_success": true,
+          "valid_citation_count": 0
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "cross-source-summary",
+          "citation_count": 2,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            },
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes.",
+            "The Tracing API consists of these main components: `TracerProvider` provides access to `Tracer`s, and a `Tracer` creates `Span`s."
+          ],
+          "cost_usd": 0.0004932000000000001,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0",
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true,
+            true
+          ],
+          "input_tokens": 400,
+          "latency_ms": 9986.343899989151,
+          "output_tokens": 1183,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 2
+        }
+      ],
+      "citation_coverage": 1.0,
+      "config_hash": "67bb513c102ee5b97ad8ead46b28a39e781e77ff2de28c7c819eececae2e4070",
+      "input_usd_per_million": 0.05,
+      "invalid_citations": 0,
+      "latency_p50_ms": 6133.670900002471,
+      "latency_p95_ms": 9798.702419992333,
+      "model": "gpt-5-nano",
+      "output_usd_per_million": 0.4,
+      "qualified": false,
+      "rejection": "cost reduction below 30%",
+      "task_success": 1.0,
+      "total_cost_usd": 0.0010412
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "case_count": 4,
+      "cases": [
+        {
+          "abstention_correct": null,
+          "case_id": "tracing-components",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "`TracerProvider` provides access to `Tracer`s, and a `Tracer` creates `Span`s."
+          ],
+          "cost_usd": 8.955e-05,
+          "error": null,
+          "evidence_ids": [
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 341,
+          "latency_ms": 1696.231699999771,
+          "output_tokens": 64,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "resource-entity",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes."
+          ],
+          "cost_usd": 7.665e-05,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 311,
+          "latency_ms": 2551.9074000039836,
+          "output_tokens": 50,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": true,
+          "case_id": "missing-collector-port",
+          "citation_count": 0,
+          "citations": [],
+          "claims": [],
+          "cost_usd": 0.0,
+          "error": null,
+          "evidence_ids": [],
+          "expected_fact_matches": [],
+          "input_tokens": 0,
+          "latency_ms": 0.0,
+          "output_tokens": 0,
+          "status": "abstained",
+          "task_success": true,
+          "valid_citation_count": 0
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "cross-source-summary",
+          "citation_count": 2,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            },
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes.",
+            "The Tracing API consists of these main components: `TracerProvider` provides access to `Tracer`s, and a `Tracer` creates `Span`s."
+          ],
+          "cost_usd": 0.00013169999999999998,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0",
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true,
+            true
+          ],
+          "input_tokens": 402,
+          "latency_ms": 2258.0181999946944,
+          "output_tokens": 119,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 2
+        }
+      ],
+      "citation_coverage": 1.0,
+      "config_hash": "f8437314644ec1f154f467d25d39a0e57008e50ed229b9709e41cdc936f0692b",
+      "input_usd_per_million": 0.15,
+      "invalid_citations": 0,
+      "latency_p50_ms": 1977.1249499972328,
+      "latency_p95_ms": 2507.8240200025903,
+      "model": "gpt-4o-mini",
+      "output_usd_per_million": 0.6,
+      "qualified": true,
+      "rejection": null,
+      "task_success": 1.0,
+      "total_cost_usd": 0.0002979
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "case_count": 4,
+      "cases": [
+        {
+          "abstention_correct": null,
+          "case_id": "tracing-components",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "`TracerProvider` provides access to `Tracer`s"
+          ],
+          "cost_usd": 0.00018419999999999998,
+          "error": null,
+          "evidence_ids": [
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 339,
+          "latency_ms": 1677.4288999877172,
+          "output_tokens": 97,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "resource-entity",
+          "citation_count": 1,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes."
+          ],
+          "cost_usd": 0.00015659999999999998,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true
+          ],
+          "input_tokens": 309,
+          "latency_ms": 1289.258200005861,
+          "output_tokens": 79,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 1
+        },
+        {
+          "abstention_correct": true,
+          "case_id": "missing-collector-port",
+          "citation_count": 0,
+          "citations": [],
+          "claims": [],
+          "cost_usd": 0.0,
+          "error": null,
+          "evidence_ids": [],
+          "expected_fact_matches": [],
+          "input_tokens": 0,
+          "latency_ms": 0.0,
+          "output_tokens": 0,
+          "status": "abstained",
+          "task_success": true,
+          "valid_citation_count": 0
+        },
+        {
+          "abstention_correct": null,
+          "case_id": "cross-source-summary",
+          "citation_count": 2,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            },
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes.",
+            "`TracerProvider` provides access to `Tracer`s"
+          ],
+          "cost_usd": 0.0002084,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0",
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true,
+            true
+          ],
+          "input_tokens": 400,
+          "latency_ms": 1445.7985000044573,
+          "output_tokens": 107,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 2
+        }
+      ],
+      "citation_coverage": 1.0,
+      "config_hash": "c5d47053d0cb5c28d3705a4dd3ca52e8bef6468b9f5436673c677f4e110815f1",
+      "input_usd_per_million": 0.2,
+      "invalid_citations": 0,
+      "latency_p50_ms": 1367.5283500051592,
+      "latency_p95_ms": 1642.6843399902282,
+      "model": "gpt-5.6-luna",
+      "output_usd_per_million": 1.2,
+      "qualified": false,
+      "rejection": "cost reduction below 30%",
+      "task_success": 1.0,
+      "total_cost_usd": 0.0005491999999999999
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "case_count": 1,
+      "cases": [
+        {
+          "abstention_correct": null,
+          "case_id": "cross-source-summary",
+          "citation_count": 2,
+          "citations": [
+            {
+              "document_version_id": "otel-resource-v1",
+              "evidence_id": "otel-resource-chunk-0",
+              "span": [
+                0,
+                110
+              ],
+              "valid": true
+            },
+            {
+              "document_version_id": "otel-tracing-api-v1",
+              "evidence_id": "otel-tracing-api-chunk-0",
+              "span": [
+                0,
+                166
+              ],
+              "valid": true
+            }
+          ],
+          "claims": [
+            "A Resource represents the entity producing telemetry as resource attributes.",
+            "`TracerProvider` provides access to `Tracer`s"
+          ],
+          "cost_usd": 0.002084,
+          "error": null,
+          "evidence_ids": [
+            "otel-resource-chunk-0",
+            "otel-tracing-api-chunk-0"
+          ],
+          "expected_fact_matches": [
+            true,
+            true
+          ],
+          "input_tokens": 400,
+          "latency_ms": 2640.7743000017945,
+          "output_tokens": 107,
+          "status": "verified",
+          "task_success": true,
+          "valid_citation_count": 2
+        }
+      ],
+      "citation_coverage": 1.0,
+      "config_hash": "3eb2ac1eadf91a11ec356d3c6010a7ef4b1703756c6a2bcd70fc3e68a43010e2",
+      "input_usd_per_million": 2.0,
+      "invalid_citations": 0,
+      "latency_p50_ms": 2640.7743000017945,
+      "latency_p95_ms": 2640.7743000017945,
+      "model": "gpt-5.6-terra",
+      "output_usd_per_million": 12.0,
+      "qualified": false,
+      "rejection": "upper bound only; cost reduction below 30%",
+      "task_success": 1.0,
+      "total_cost_usd": 0.002084
+    }
+  ],
+  "pricing_snapshot": "2026-09-18",
+  "selected_model": "gpt-4o-mini"
+}
