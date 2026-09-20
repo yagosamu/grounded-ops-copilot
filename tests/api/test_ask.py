@@ -9,6 +9,7 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from adapters.policy.snapshot import SnapshotPolicyStore
 from domain.answering import Question
 from interfaces.http.ask import AskEvent, AskService, AskSession, create_ask_router
 from interfaces.http.auth import PrincipalDependency
@@ -26,6 +27,7 @@ from modules.answering.generator import (
 )
 from modules.answering.verifier import CitationVerifier
 from modules.policy.authorizer import AuthorizationReason, Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.retriever import Evidence, EvidenceSet, QueryContext
 
 
@@ -99,12 +101,23 @@ def ask_service(
     result: EvidenceSet, provider: FakeStreamingProvider
 ) -> tuple[AskService, FakeRetriever]:
     retriever = FakeRetriever(result)
+    policies = tuple(
+        DocumentPolicy(
+            item.tenant_id,
+            item.source_id,
+            item.document_id,
+            item.document_version_id,
+            ("public",),
+            False,
+        )
+        for item in result.evidence
+    )
     return (
         AskService(
             retriever,
             ContextPacker(max_tokens=100),
             provider,
-            CitationVerifier(),
+            CitationVerifier(PolicyEnforcer(SnapshotPolicyStore(policies))),
             AbstentionDecider(),
             max_generation_attempts=2,
             retry_delays=(0.0,),

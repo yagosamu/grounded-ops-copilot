@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from domain.answering import Citation, Claim, GroundedAnswer, VerificationStatus
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentRef, PolicyEnforcer
 from modules.retrieval.retriever import Evidence, EvidenceSet
 
 
@@ -13,6 +15,7 @@ class VerificationFailure(StrEnum):
     EVIDENCE_NOT_FOUND = "evidence_not_found"
     VERSION_MISMATCH = "version_mismatch"
     SPAN_MISMATCH = "span_mismatch"
+    EVIDENCE_UNAUTHORIZED = "evidence_unauthorized"
     UNSUPPORTED_CLAIM = "unsupported_claim"
 
 
@@ -23,8 +26,14 @@ class VerificationResult:
 
 
 class CitationVerifier:
+    def __init__(self, enforcer: PolicyEnforcer) -> None:
+        self._enforcer = enforcer
+
     def verify(
-        self, answer: GroundedAnswer, evidence_set: EvidenceSet
+        self,
+        answer: GroundedAnswer,
+        evidence_set: EvidenceSet,
+        principal: Principal,
     ) -> VerificationResult:
         if answer.status is VerificationStatus.ABSTAINED:
             return VerificationResult(answer, ())
@@ -52,6 +61,18 @@ class CitationVerifier:
                     )
                 )
             if len(resolved_evidence) != len(claim.citations):
+                continue
+            references = tuple(
+                DocumentRef(item.tenant_id, item.document_id, item.document_version_id)
+                for item in resolved_evidence
+            )
+            try:
+                authorized = self._enforcer.authorize_reads(principal, references)
+            except Exception:
+                failures.append(VerificationFailure.EVIDENCE_UNAUTHORIZED)
+                continue
+            if any(reference not in authorized for reference in references):
+                failures.append(VerificationFailure.EVIDENCE_UNAUTHORIZED)
                 continue
             support = set().union(*(_tokens(item.text) for item in resolved_evidence))
             if not _tokens(claim.text) <= support:

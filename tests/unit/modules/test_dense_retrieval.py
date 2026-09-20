@@ -9,8 +9,10 @@ from adapters.opensearch.dense import (
     DenseSearchRequest,
     DenseSearchResult,
 )
+from adapters.policy.snapshot import SnapshotPolicyStore
 from modules.embeddings.embedder import EmbeddingRecord
-from modules.policy.authorizer import Authorizer, Principal
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.dense import DenseRetriever
 from modules.retrieval.retriever import QueryContext, RetrievalUnavailable
 
@@ -63,11 +65,32 @@ def hit(
     )
 
 
+def enforcer(*hits: DenseSearchHit) -> PolicyEnforcer:
+    return PolicyEnforcer(
+        SnapshotPolicyStore(
+            tuple(
+                DocumentPolicy(
+                    item.tenant_id,
+                    item.source_id,
+                    item.document_id,
+                    item.document_version_id,
+                    item.policy,
+                    False,
+                )
+                for item in hits
+            )
+        )
+    )
+
+
 @pytest.mark.unit
 def test_dense_uses_the_same_policy_filters_and_corpus_as_bm25() -> None:
     adapter = FrozenDenseAdapter(DenseSearchResult((hit(),), 1, 8))
     retriever = DenseRetriever(
-        adapter, FrozenQueryEmbedder(), Authorizer(), corpus_version="dataset-v1"
+        adapter,
+        FrozenQueryEmbedder(),
+        enforcer(hit()),
+        corpus_version="dataset-v1",
     )
     principal = Principal("alice", "alpha", ("engineer",), ("oncall",))
 
@@ -105,12 +128,15 @@ def test_dense_reauthorizes_hits_and_redacts_dependency_failure() -> None:
     context = QueryContext("query", Principal("alice", "alpha", (), ()))
 
     denied = DenseRetriever(
-        cross_tenant, FrozenQueryEmbedder(), Authorizer(), "dataset-v1"
+        cross_tenant,
+        FrozenQueryEmbedder(),
+        enforcer(hit(tenant="beta")),
+        "dataset-v1",
     ).retrieve(context)
     unavailable = DenseRetriever(
         FrozenDenseAdapter(RuntimeError("private endpoint")),
         FrozenQueryEmbedder(),
-        Authorizer(),
+        enforcer(),
         "dataset-v1",
     )
 

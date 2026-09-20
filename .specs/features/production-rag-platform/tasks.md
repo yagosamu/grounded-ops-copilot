@@ -909,7 +909,7 @@ protected route without an authenticator. Adequacy A-D: PASS under
 `CONSTRAINTS.md`; authentication fails closed with a generic 401 and Bearer
 challenge without disclosing validation details.
 
-### T34: Enforce document policies in storage and search
+### T34: Enforce document policies in storage and search [x]
 
 **What**: Apply the same authorization decision to metadata reads, index writes, retrieval and citation resolution.
 **Where**: `src/modules/policy/enforcement.py`
@@ -919,6 +919,20 @@ challenge without disclosing validation details.
 **Tests**: unit, integration and adversarial E2E tests.
 **Gate**: Release.
 **Commit**: `feat(security): enforce document policy end to end`
+
+**Evidence**: `make release-check` passed with 167 unit tests, 253 tests in the
+coverage run, 90.03% total coverage, 94% diff coverage and 86 release tests;
+gitleaks and floor guard were clean. `PolicyEnforcer` is the shared public seam for
+authoritative metadata reads and index projection validation. Unit tests prove
+cross-tenant references are excluded before the store query and document ACLs are
+resolved in one batch (`test_policy_enforcement.py:82-85`), stale roles are denied
+from current metadata (`:101-102`) and forged projections fail closed (`:122-123`).
+The PostgreSQL/OpenSearch adversarial flow proves a permission revocation blocks
+retrieval and metadata without reindexing (`test_policy_enforcement_e2e.py:159-160`),
+invalidates an old citation (`:161-164`), rejects a forged index ACL (`:166-167`)
+and discloses no foreign document through a forged filter or direct reference
+(`:176-182`). Adequacy A-D: PASS; all four done-when attacks have outcome assertions
+through public seams and run against real infrastructure where persistence matters.
 
 ### T35: Treat corpus content as untrusted
 

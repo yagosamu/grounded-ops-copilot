@@ -6,6 +6,8 @@ from typing import Any, cast
 
 from opensearchpy import OpenSearch
 
+from modules.policy.enforcement import PolicyEnforcer
+
 
 @dataclass(frozen=True)
 class DenseDocument:
@@ -71,10 +73,17 @@ class DenseSearchResult:
 
 
 class OpenSearchDenseAdapter:
-    def __init__(self, client: OpenSearch, index: str, dimensions: int) -> None:
+    def __init__(
+        self,
+        client: OpenSearch,
+        index: str,
+        dimensions: int,
+        enforcer: PolicyEnforcer,
+    ) -> None:
         self.client = client
         self.index_name = index
         self.dimensions = dimensions
+        self._enforcer = enforcer
 
     def ensure_index(self) -> None:
         if self.client.indices.exists(index=self.index_name):
@@ -128,6 +137,7 @@ class OpenSearchDenseAdapter:
         )
 
     def index(self, documents: tuple[DenseDocument, ...]) -> None:
+        self._enforcer.validate_projections(documents)
         body: list[dict[str, Any]] = []
         for document in documents:
             if len(document.embedding) != self.dimensions:

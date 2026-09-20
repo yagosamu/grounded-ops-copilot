@@ -17,6 +17,7 @@ from typing import Protocol
 
 import yaml
 
+from adapters.policy.snapshot import SnapshotPolicyStore
 from domain.answering import Question, VerificationStatus
 from modules.answering.abstention import AbstentionDecider
 from modules.answering.context_packer import ContextPacker
@@ -27,7 +28,8 @@ from modules.answering.generator import (
     OpenAIGenerationProvider,
 )
 from modules.answering.verifier import CitationVerifier
-from modules.policy.authorizer import AuthorizationReason
+from modules.policy.authorizer import AuthorizationReason, Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.retriever import Evidence, EvidenceSet
 
 
@@ -282,7 +284,21 @@ def _run_case(
             _question(case),
             context,
         )
-        verification = CitationVerifier().verify(draft, evidence_set)
+        policies = tuple(
+            DocumentPolicy(
+                item.tenant_id,
+                item.source_id,
+                item.document_id,
+                item.document_version_id,
+                ("public",),
+                False,
+            )
+            for item in case.evidence
+        )
+        principal = Principal("answer-eval", case.evidence[0].tenant_id, (), ())
+        verification = CitationVerifier(
+            PolicyEnforcer(SnapshotPolicyStore(policies))
+        ).verify(draft, evidence_set, principal)
     except GenerationProviderError as error:
         latency = (clock() - started) * 1_000
         return CaseResult(

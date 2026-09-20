@@ -16,6 +16,8 @@ from adapters.opensearch.index_writer import (
     OpenSearchIndexWriter,
     VersionProjection,
 )
+from adapters.policy.snapshot import SnapshotPolicyStore
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 
 
 @pytest.fixture
@@ -23,7 +25,22 @@ def writer(opensearch_client: OpenSearch) -> Iterator[OpenSearchIndexWriter]:
     prefix = f"test-writer-{uuid4().hex}"
     schema = LexicalIndexSchema(opensearch_client, prefix)
     schema.ensure("1")
-    yield OpenSearchIndexWriter(opensearch_client, schema.write_alias)
+    policies = tuple(
+        DocumentPolicy(
+            "alpha",
+            "source-1",
+            "document-1",
+            version_id,
+            ("role:engineer", "group:oncall"),
+            False,
+        )
+        for version_id in (None, "version-1", "version-2")
+    )
+    yield OpenSearchIndexWriter(
+        opensearch_client,
+        schema.write_alias,
+        PolicyEnforcer(SnapshotPolicyStore(policies)),
+    )
     opensearch_client.indices.delete(index=f"{prefix}-*", ignore_unavailable=True)
 
 

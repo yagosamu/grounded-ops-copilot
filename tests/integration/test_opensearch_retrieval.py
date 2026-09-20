@@ -14,7 +14,9 @@ from adapters.opensearch.index_writer import (
     VersionProjection,
 )
 from adapters.opensearch.search import OpenSearchBM25Adapter
-from modules.policy.authorizer import Authorizer, Principal
+from adapters.policy.snapshot import SnapshotPolicyStore
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.retriever import (
     BM25Retriever,
     QueryContext,
@@ -27,31 +29,43 @@ def retriever(opensearch_client: OpenSearch) -> Iterator[BM25Retriever]:
     prefix = f"test-retrieval-{uuid4().hex}"
     schema = LexicalIndexSchema(opensearch_client, prefix)
     schema.ensure("1")
-    writer = OpenSearchIndexWriter(opensearch_client, schema.write_alias)
-    writer.upsert(version("alpha", "doc-trace", "v1", "Tracing overview", "public"))
-    writer.upsert(
+    projections = (
+        version("alpha", "doc-trace", "v1", "Tracing overview", "public"),
         version(
             "alpha",
             "doc-trace",
             "v2",
             "TracerProvider provides tracer access",
             "public",
-        )
-    )
-    writer.upsert(
+        ),
         version(
             "alpha",
             "doc-resource",
             "v1",
             "Resource describes an entity",
             "group:oncall",
+        ),
+        version(
+            "beta", "doc-secret", "v1", "TracerProvider private incident", "public"
+        ),
+    )
+    policies = tuple(
+        DocumentPolicy(
+            item.tenant_id,
+            item.source_id,
+            item.document_id,
+            item.document_version_id,
+            item.policy,
+            False,
         )
+        for item in projections
     )
-    writer.upsert(
-        version("beta", "doc-secret", "v1", "TracerProvider private incident", "public")
-    )
+    enforcer = PolicyEnforcer(SnapshotPolicyStore(policies))
+    writer = OpenSearchIndexWriter(opensearch_client, schema.write_alias, enforcer)
+    for projection in projections:
+        writer.upsert(projection)
     yield BM25Retriever(
-        OpenSearchBM25Adapter(opensearch_client, schema.read_alias), Authorizer()
+        OpenSearchBM25Adapter(opensearch_client, schema.read_alias), enforcer
     )
     opensearch_client.indices.delete(index=f"{prefix}-*", ignore_unavailable=True)
 
@@ -132,7 +146,7 @@ def test_empty_and_real_dependency_failure_are_explicit(
             OpenSearch(hosts=[{"host": "127.0.0.1", "port": 1}], max_retries=0),
             "missing",
         ),
-        Authorizer(),
+        retriever.enforcer,
     )
 
     assert empty.evidence == ()

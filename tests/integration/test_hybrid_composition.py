@@ -10,8 +10,10 @@ from adapters.opensearch.dense import (
     DenseSearchResult,
 )
 from adapters.opensearch.search import SearchHit, SearchRequest, SearchResult
+from adapters.policy.snapshot import SnapshotPolicyStore
 from modules.embeddings.embedder import EmbeddingRecord
-from modules.policy.authorizer import Authorizer, Principal
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.dense import DenseRetriever
 from modules.retrieval.hybrid import HybridRetriever
 from modules.retrieval.retriever import BM25Retriever, QueryContext
@@ -82,11 +84,15 @@ class QueryEmbedder:
 
 @pytest.mark.integration
 def test_hybrid_composes_public_retrievers_without_duplicate_evidence() -> None:
-    authorizer = Authorizer()
+    enforcer = PolicyEnforcer(
+        SnapshotPolicyStore(
+            (DocumentPolicy("alpha", "otel", "doc", "v1", ("public",), False),)
+        )
+    )
     hybrid = HybridRetriever(
-        BM25Retriever(LexicalAdapter(), authorizer),
-        DenseRetriever(DenseAdapter(), QueryEmbedder(), authorizer, "dataset-v1"),
-        authorizer,
+        BM25Retriever(LexicalAdapter(), enforcer),
+        DenseRetriever(DenseAdapter(), QueryEmbedder(), enforcer, "dataset-v1"),
+        enforcer,
     )
 
     result = hybrid.retrieve(QueryContext("query", Principal("alice", "alpha", (), ())))

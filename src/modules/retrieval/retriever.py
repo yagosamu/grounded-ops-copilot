@@ -5,12 +5,8 @@ from datetime import datetime
 from typing import Protocol
 
 from adapters.opensearch.search import SearchRequest, SearchResult
-from modules.policy.authorizer import (
-    AuthorizationReason,
-    Authorizer,
-    Principal,
-    ResourceAction,
-)
+from modules.policy.authorizer import AuthorizationReason, Principal
+from modules.policy.enforcement import DocumentRef, PolicyEnforcer
 
 
 class SearchAdapter(Protocol):
@@ -74,25 +70,20 @@ class EvidenceSet:
 
 
 class BM25Retriever:
-    def __init__(self, adapter: SearchAdapter, authorizer: Authorizer) -> None:
+    def __init__(self, adapter: SearchAdapter, enforcer: PolicyEnforcer) -> None:
         self.adapter = adapter
-        self.authorizer = authorizer
+        self.enforcer = enforcer
 
     def retrieve(self, context: QueryContext) -> EvidenceSet:
-        if not context.principal.known:
+        scope = self.enforcer.search_scope(context.principal)
+        if scope is None:
             return EvidenceSet((), "bm25", 0, 0)
-        access = (
-            "public",
-            f"principal:{context.principal.id}",
-            *(f"role:{role}" for role in context.principal.roles),
-            *(f"group:{group}" for group in context.principal.groups),
-        )
         try:
             result = self.adapter.search(
                 SearchRequest(
                     context.query,
-                    context.principal.tenant_id,
-                    access,
+                    scope.tenant_id,
+                    scope.access_policy,
                     context.limit,
                     context.offset,
                     context.source_ids,
@@ -100,16 +91,20 @@ class BM25Retriever:
                     context.include_historical,
                 )
             )
+            references = tuple(
+                DocumentRef(hit.tenant_id, hit.document_id, hit.document_version_id)
+                for hit in result.hits
+            )
+            authorized = self.enforcer.authorize_reads(context.principal, references)
         except Exception as error:
             raise RetrievalUnavailable("retrieval unavailable") from error
-
         evidence: list[Evidence] = []
         for hit in result.hits:
-            decision = self.authorizer.authorize(
-                context.principal,
-                ResourceAction(hit.tenant_id, hit.document_id, "read", hit.policy),
+            reference = DocumentRef(
+                hit.tenant_id, hit.document_id, hit.document_version_id
             )
-            if not decision.allowed:
+            document = authorized.get(reference)
+            if document is None:
                 continue
             evidence.append(
                 Evidence(
@@ -127,7 +122,7 @@ class BM25Retriever:
                     hit.source_timestamp,
                     hit.is_current,
                     hit.score,
-                    decision.reason,
+                    document.decision.reason,
                 )
             )
         return EvidenceSet(tuple(evidence), "bm25", len(evidence), result.took_ms)

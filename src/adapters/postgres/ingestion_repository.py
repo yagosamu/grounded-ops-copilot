@@ -6,10 +6,11 @@ from datetime import datetime
 from hashlib import sha256
 from uuid import uuid4
 
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection, bindparam, text
 from sqlalchemy.engine import RowMapping
 
 from domain.ingestion import Document, DocumentVersion, IngestionJob, JobState, Source
+from modules.policy.enforcement import DocumentPolicy, DocumentRef
 
 
 @dataclass(frozen=True)
@@ -58,7 +59,7 @@ class IngestionRepository:
             text("""
             INSERT INTO sources (tenant_id,id,type,external_ref,policy,cursor)
             VALUES (:tenant,:source,:type,:ref,CAST(:policy AS jsonb),:cursor)
-            ON CONFLICT (tenant_id,id) DO NOTHING
+            ON CONFLICT (tenant_id,id) DO UPDATE SET policy=EXCLUDED.policy
         """),
             parameters,
         )
@@ -171,6 +172,69 @@ class IngestionRepository:
             .one_or_none()
         )
         return Document(**dict(row)) if row else None
+
+    def get_document_policies(
+        self, tenant_id: str, references: tuple[DocumentRef, ...]
+    ) -> dict[DocumentRef, DocumentPolicy]:
+        scoped = tuple(
+            dict.fromkeys(
+                reference
+                for reference in references
+                if reference.tenant_id == tenant_id
+            )
+        )
+        if not scoped:
+            return {}
+        document_ids = tuple(
+            dict.fromkeys(reference.document_id for reference in scoped)
+        )
+        document_rows = self.connection.execute(
+            text("""
+            SELECT d.id AS document_id,d.source_id,d.deleted,s.policy
+            FROM documents d
+            JOIN sources s ON s.tenant_id=d.tenant_id AND s.id=d.source_id
+            WHERE d.tenant_id=:tenant AND d.id IN :document_ids
+        """).bindparams(bindparam("document_ids", expanding=True)),
+            {"tenant": tenant_id, "document_ids": document_ids},
+        ).mappings()
+        documents = {str(row["document_id"]): row for row in document_rows}
+        version_ids = tuple(
+            dict.fromkeys(
+                reference.document_version_id
+                for reference in scoped
+                if reference.document_version_id is not None
+            )
+        )
+        versions: set[tuple[str, str]] = set()
+        if version_ids:
+            version_rows = self.connection.execute(
+                text("""
+                SELECT document_id,id FROM document_versions
+                WHERE tenant_id=:tenant AND id IN :version_ids
+            """).bindparams(bindparam("version_ids", expanding=True)),
+                {"tenant": tenant_id, "version_ids": version_ids},
+            ).mappings()
+            versions = {
+                (str(row["document_id"]), str(row["id"])) for row in version_rows
+            }
+        resolved: dict[DocumentRef, DocumentPolicy] = {}
+        for reference in scoped:
+            row = documents.get(reference.document_id)
+            version_id = reference.document_version_id
+            if row is None or (
+                version_id is not None
+                and (reference.document_id, version_id) not in versions
+            ):
+                continue
+            resolved[reference] = DocumentPolicy(
+                tenant_id,
+                str(row["source_id"]),
+                reference.document_id,
+                version_id,
+                tuple(str(entry) for entry in row["policy"]),
+                bool(row["deleted"]),
+            )
+        return resolved
 
     def get_version(self, tenant_id: str, version_id: str) -> DocumentVersion | None:
         row = (

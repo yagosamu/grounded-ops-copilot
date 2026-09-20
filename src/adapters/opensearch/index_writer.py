@@ -6,6 +6,8 @@ from typing import Any, cast
 
 from opensearchpy import OpenSearch
 
+from modules.policy.enforcement import DocumentRef, PolicyEnforcer
+
 
 @dataclass(frozen=True)
 class IndexChunk:
@@ -37,11 +39,15 @@ class BulkProjectionError(RuntimeError):
 
 
 class OpenSearchIndexWriter:
-    def __init__(self, client: OpenSearch, write_alias: str) -> None:
+    def __init__(
+        self, client: OpenSearch, write_alias: str, enforcer: PolicyEnforcer
+    ) -> None:
         self.client = client
         self.write_alias = write_alias
+        self._enforcer = enforcer
 
     def upsert(self, projection: VersionProjection) -> None:
+        self._enforcer.validate_projections((projection,))
         body: list[dict[str, Any]] = []
         for chunk in projection.chunks:
             body.extend(
@@ -127,6 +133,7 @@ class OpenSearchIndexWriter:
         )
 
     def remove_document(self, tenant_id: str, document_id: str) -> None:
+        self._enforcer.validate_removal(DocumentRef(tenant_id, document_id))
         self.client.delete_by_query(
             index=self.write_alias,
             body={

@@ -3,7 +3,7 @@
 from dataclasses import replace
 from typing import Protocol
 
-from modules.policy.authorizer import Authorizer, ResourceAction
+from modules.policy.enforcement import DocumentRef, PolicyEnforcer
 from modules.retrieval.retriever import (
     Evidence,
     EvidenceSet,
@@ -21,14 +21,14 @@ class HybridRetriever:
         self,
         lexical: Retriever,
         dense: Retriever,
-        authorizer: Authorizer,
+        enforcer: PolicyEnforcer,
         rrf_k: int = 60,
     ) -> None:
         if rrf_k <= 0:
             raise ValueError("rrf_k must be positive")
         self._lexical = lexical
         self._dense = dense
-        self._authorizer = authorizer
+        self._enforcer = enforcer
         self._rrf_k = rrf_k
 
     def retrieve(self, context: QueryContext) -> EvidenceSet:
@@ -47,21 +47,30 @@ class HybridRetriever:
                 scores[identity] = scores.get(identity, 0.0) + 1 / (self._rrf_k + rank)
                 evidence_by_identity.setdefault(identity, evidence)
 
+        try:
+            references = tuple(
+                DocumentRef(item.tenant_id, item.document_id, item.document_version_id)
+                for item in evidence_by_identity.values()
+            )
+            decisions = self._enforcer.authorize_reads(context.principal, references)
+        except Exception as error:
+            raise RetrievalUnavailable("retrieval unavailable") from error
         authorized: list[Evidence] = []
         for identity, score in scores.items():
             evidence = evidence_by_identity[identity]
-            decision = self._authorizer.authorize(
-                context.principal,
-                ResourceAction(
-                    evidence.tenant_id,
-                    evidence.document_id,
-                    "read",
-                    _policy_from_reason(evidence, context),
-                ),
+            reference = DocumentRef(
+                evidence.tenant_id,
+                evidence.document_id,
+                evidence.document_version_id,
             )
-            if decision.allowed:
+            document = decisions.get(reference)
+            if document is not None:
                 authorized.append(
-                    replace(evidence, score=score, authorization_reason=decision.reason)
+                    replace(
+                        evidence,
+                        score=score,
+                        authorization_reason=document.decision.reason,
+                    )
                 )
         authorized.sort(
             key=lambda item: (-item.score, item.chunk_id, item.document_version_id)
@@ -83,16 +92,3 @@ class HybridRetriever:
             return retriever.retrieve(context)
         except RetrievalUnavailable:
             return None
-
-
-def _policy_from_reason(evidence: Evidence, context: QueryContext) -> tuple[str, ...]:
-    reason = evidence.authorization_reason
-    if reason.value == "public":
-        return ("public",)
-    if reason.value == "principal":
-        return (f"principal:{context.principal.id}",)
-    if reason.value == "role":
-        return tuple(f"role:{role}" for role in context.principal.roles[:1])
-    if reason.value == "group":
-        return tuple(f"group:{group}" for group in context.principal.groups[:1])
-    return ()

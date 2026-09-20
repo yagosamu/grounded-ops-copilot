@@ -5,7 +5,9 @@ from datetime import UTC, datetime
 import pytest
 
 from adapters.opensearch.search import SearchHit, SearchRequest, SearchResult
-from modules.policy.authorizer import Authorizer, Principal
+from adapters.policy.snapshot import SnapshotPolicyStore
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.retriever import (
     BM25Retriever,
     QueryContext,
@@ -23,6 +25,11 @@ class FakeSearchAdapter:
         if isinstance(self.result, Exception):
             raise self.result
         return self.result
+
+
+class FailingPolicyStore:
+    def get_document_policies(self, tenant_id, references):
+        raise RuntimeError("postgres://admin:private@metadata")
 
 
 def hit(
@@ -51,12 +58,30 @@ def hit(
     )
 
 
+def enforcer(*hits: SearchHit) -> PolicyEnforcer:
+    return PolicyEnforcer(
+        SnapshotPolicyStore(
+            tuple(
+                DocumentPolicy(
+                    item.tenant_id,
+                    item.source_id,
+                    item.document_id,
+                    item.document_version_id,
+                    item.policy,
+                    False,
+                )
+                for item in hits
+            )
+        )
+    )
+
+
 @pytest.mark.unit
 def test_returns_ranked_evidence_with_version_and_provenance() -> None:
     adapter = FakeSearchAdapter(
         SearchResult((hit("best", 4.2), hit("next", 2.1)), 2, 7)
     )
-    retriever = BM25Retriever(adapter, Authorizer())
+    retriever = BM25Retriever(adapter, enforcer(*adapter.result.hits))
 
     result = retriever.retrieve(
         QueryContext("tracer provider", Principal("alice", "alpha", ("engineer",), ()))
@@ -86,7 +111,8 @@ def test_removes_cross_tenant_and_document_denied_hits() -> None:
             2,
         )
     )
-    retriever = BM25Retriever(adapter, Authorizer())
+    assert isinstance(adapter.result, SearchResult)
+    retriever = BM25Retriever(adapter, enforcer(*adapter.result.hits))
 
     result = retriever.retrieve(
         QueryContext("evidence", Principal("alice", "alpha", ("engineer",), ()))
@@ -97,7 +123,7 @@ def test_removes_cross_tenant_and_document_denied_hits() -> None:
 
 @pytest.mark.unit
 def test_preserves_empty_results_and_diagnostics() -> None:
-    retriever = BM25Retriever(FakeSearchAdapter(SearchResult((), 0, 3)), Authorizer())
+    retriever = BM25Retriever(FakeSearchAdapter(SearchResult((), 0, 3)), enforcer())
 
     result = retriever.retrieve(
         QueryContext("missing", Principal("alice", "alpha", ("engineer",), ()))
@@ -112,7 +138,22 @@ def test_preserves_empty_results_and_diagnostics() -> None:
 def test_dependency_failure_is_typed_and_redacted() -> None:
     retriever = BM25Retriever(
         FakeSearchAdapter(RuntimeError("http://admin:private@search:9200")),
-        Authorizer(),
+        enforcer(),
+    )
+
+    with pytest.raises(RetrievalUnavailable, match="retrieval unavailable") as error:
+        retriever.retrieve(
+            QueryContext("query", Principal("alice", "alpha", ("engineer",), ()))
+        )
+
+    assert "private" not in str(error.value)
+
+
+@pytest.mark.unit
+def test_authoritative_policy_failure_is_typed_and_redacted() -> None:
+    retriever = BM25Retriever(
+        FakeSearchAdapter(SearchResult((hit("candidate", 1.0),), 1, 2)),
+        PolicyEnforcer(FailingPolicyStore()),
     )
 
     with pytest.raises(RetrievalUnavailable, match="retrieval unavailable") as error:

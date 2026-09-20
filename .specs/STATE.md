@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 5 in progress; T33 complete and T34 is next.
-- **Completed**: T01-T33, including strict Bearer authentication and immutable tenant principal context for protected routes.
+- **Phase / Task**: Phase 5 in progress; T34 complete and T35 is next.
+- **Completed**: T01-T34, including authoritative document-policy enforcement across metadata, indexing, retrieval and citation resolution.
 - **In-progress**: none.
-- **Next step**: T34, enforce the same document policy across storage, search and citation resolution.
+- **Next step**: T35, isolate untrusted corpus instructions from prompt and tool authority.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T33 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T34 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

@@ -4,7 +4,7 @@ from typing import Protocol
 
 from adapters.opensearch.dense import DenseSearchRequest, DenseSearchResult
 from modules.embeddings.embedder import EmbeddingRecord
-from modules.policy.authorizer import Authorizer, ResourceAction
+from modules.policy.enforcement import DocumentRef, PolicyEnforcer
 from modules.retrieval.retriever import (
     Evidence,
     EvidenceSet,
@@ -26,32 +26,27 @@ class DenseRetriever:
         self,
         adapter: DenseSearchAdapter,
         embedder: QueryEmbedder,
-        authorizer: Authorizer,
+        enforcer: PolicyEnforcer,
         corpus_version: str,
     ) -> None:
         if not corpus_version:
             raise ValueError("invalid corpus version")
         self._adapter = adapter
         self._embedder = embedder
-        self._authorizer = authorizer
+        self._enforcer = enforcer
         self._corpus_version = corpus_version
 
     def retrieve(self, context: QueryContext) -> EvidenceSet:
-        if not context.principal.known:
+        scope = self._enforcer.search_scope(context.principal)
+        if scope is None:
             return EvidenceSet((), "dense-candidate", 0, 0)
-        access = (
-            "public",
-            f"principal:{context.principal.id}",
-            *(f"role:{role}" for role in context.principal.roles),
-            *(f"group:{group}" for group in context.principal.groups),
-        )
         try:
             embedding = self._embedder.embed_query(context.query)
             result = self._adapter.search(
                 DenseSearchRequest(
                     embedding.vector,
-                    context.principal.tenant_id,
-                    access,
+                    scope.tenant_id,
+                    scope.access_policy,
                     self._corpus_version,
                     context.limit,
                     context.offset,
@@ -60,15 +55,20 @@ class DenseRetriever:
                     context.include_historical,
                 )
             )
+            references = tuple(
+                DocumentRef(hit.tenant_id, hit.document_id, hit.document_version_id)
+                for hit in result.hits
+            )
+            authorized = self._enforcer.authorize_reads(context.principal, references)
         except Exception as error:
             raise RetrievalUnavailable("retrieval unavailable") from error
         evidence: list[Evidence] = []
         for hit in result.hits:
-            decision = self._authorizer.authorize(
-                context.principal,
-                ResourceAction(hit.tenant_id, hit.document_id, "read", hit.policy),
+            reference = DocumentRef(
+                hit.tenant_id, hit.document_id, hit.document_version_id
             )
-            if decision.allowed:
+            document = authorized.get(reference)
+            if document is not None:
                 evidence.append(
                     Evidence(
                         hit.chunk_id,
@@ -85,7 +85,7 @@ class DenseRetriever:
                         hit.source_timestamp,
                         hit.is_current,
                         hit.score,
-                        decision.reason,
+                        document.decision.reason,
                     )
                 )
         return EvidenceSet(

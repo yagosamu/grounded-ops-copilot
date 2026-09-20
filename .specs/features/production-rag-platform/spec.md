@@ -149,7 +149,7 @@ The acceptance criteria below define the testable behavior of each story.
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
 | ANS-01 | Grounded citations | Complete: verified streaming Ask and live multi-model benchmark promote GPT-4o Mini with 100% citation coverage and zero invalid citations (T06, T26-T32) |
 | ANS-02 | Abstention and verification | Complete: deterministic verification, calibrated abstention and live benchmark achieve 100% abstention accuracy on dataset v1 (T26, T29-T32) |
-| SEC-01 | Tenant/document isolation | In progress: signed Bearer identity, immutable tenant principal context and tenant/ACL-filtered retrieval complete (T16-T17, T33) |
+| SEC-01 | Tenant/document isolation | In progress: signed principal context and authoritative policy enforcement now protect metadata, index writes, retrieval and citation resolution (T16-T17, T33-T34) |
 | SEC-02 | Untrusted-content and secret controls | Pending |
 | AGT-01 | Bounded investigation | Pending |
 | AGT-02 | Agent promotion benchmark | Pending |

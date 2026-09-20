@@ -8,8 +8,10 @@ import pytest
 from opensearchpy import OpenSearch
 
 from adapters.opensearch.dense import DenseDocument, OpenSearchDenseAdapter
+from adapters.policy.snapshot import SnapshotPolicyStore
 from modules.embeddings.embedder import EmbeddingRecord
-from modules.policy.authorizer import Authorizer, Principal
+from modules.policy.authorizer import Principal
+from modules.policy.enforcement import DocumentPolicy, PolicyEnforcer
 from modules.retrieval.dense import DenseRetriever
 from modules.retrieval.retriever import QueryContext
 
@@ -22,77 +24,90 @@ class FixedQueryEmbedder:
 @pytest.fixture
 def dense_retriever(opensearch_client: OpenSearch) -> Iterator[DenseRetriever]:
     index = f"test-dense-{uuid4().hex}"
-    adapter = OpenSearchDenseAdapter(opensearch_client, index, dimensions=2)
-    adapter.ensure_index()
     timestamp = datetime(2026, 9, 17, tzinfo=UTC)
-    adapter.index(
-        (
-            DenseDocument(
-                "trace",
-                "alpha",
-                "otel-tracing-api",
-                "doc-trace",
-                "v1",
-                ("public",),
-                0,
-                "TracerProvider provides tracers",
-                0,
-                30,
-                "trace-hash",
-                "markdown-v1",
-                "structural-v1",
-                timestamp,
-                True,
-                "dataset-v1",
-                "fake-v1",
-                "v1",
-                (1.0, 0.0),
-            ),
-            DenseDocument(
-                "resource",
-                "alpha",
-                "otel-resource",
-                "doc-resource",
-                "v1",
-                ("group:oncall",),
-                0,
-                "Resource represents an entity",
-                0,
-                29,
-                "resource-hash",
-                "markdown-v1",
-                "structural-v1",
-                timestamp,
-                True,
-                "dataset-v1",
-                "fake-v1",
-                "v1",
-                (0.0, 1.0),
-            ),
-            DenseDocument(
-                "secret",
-                "beta",
-                "secret-source",
-                "secret-doc",
-                "v1",
-                ("public",),
-                0,
-                "Private incident",
-                0,
-                16,
-                "secret-hash",
-                "markdown-v1",
-                "structural-v1",
-                timestamp,
-                True,
-                "dataset-v1",
-                "fake-v1",
-                "v1",
-                (1.0, 0.0),
-            ),
-        )
+    documents = (
+        DenseDocument(
+            "trace",
+            "alpha",
+            "otel-tracing-api",
+            "doc-trace",
+            "v1",
+            ("public",),
+            0,
+            "TracerProvider provides tracers",
+            0,
+            30,
+            "trace-hash",
+            "markdown-v1",
+            "structural-v1",
+            timestamp,
+            True,
+            "dataset-v1",
+            "fake-v1",
+            "v1",
+            (1.0, 0.0),
+        ),
+        DenseDocument(
+            "resource",
+            "alpha",
+            "otel-resource",
+            "doc-resource",
+            "v1",
+            ("group:oncall",),
+            0,
+            "Resource represents an entity",
+            0,
+            29,
+            "resource-hash",
+            "markdown-v1",
+            "structural-v1",
+            timestamp,
+            True,
+            "dataset-v1",
+            "fake-v1",
+            "v1",
+            (0.0, 1.0),
+        ),
+        DenseDocument(
+            "secret",
+            "beta",
+            "secret-source",
+            "secret-doc",
+            "v1",
+            ("public",),
+            0,
+            "Private incident",
+            0,
+            16,
+            "secret-hash",
+            "markdown-v1",
+            "structural-v1",
+            timestamp,
+            True,
+            "dataset-v1",
+            "fake-v1",
+            "v1",
+            (1.0, 0.0),
+        ),
     )
-    yield DenseRetriever(adapter, FixedQueryEmbedder(), Authorizer(), "dataset-v1")
+    policies = tuple(
+        DocumentPolicy(
+            item.tenant_id,
+            item.source_id,
+            item.document_id,
+            item.document_version_id,
+            item.policy,
+            False,
+        )
+        for item in documents
+    )
+    enforcer = PolicyEnforcer(SnapshotPolicyStore(policies))
+    adapter = OpenSearchDenseAdapter(
+        opensearch_client, index, dimensions=2, enforcer=enforcer
+    )
+    adapter.ensure_index()
+    adapter.index(documents)
+    yield DenseRetriever(adapter, FixedQueryEmbedder(), enforcer, "dataset-v1")
     opensearch_client.indices.delete(index=index, ignore_unavailable=True)
 
 

@@ -128,7 +128,7 @@ class AskService:
         except GenerationProviderError as error:
             yield _generation_failure(error)
             return
-        verification = self._verifier.verify(draft, evidence_set)
+        verification = self._verifier.verify(draft, evidence_set, principal)
         decision = self._abstention.decide(context, verification=verification)
         if decision is not None:
             yield _final_abstention(decision, question, draft.usage, evidence_set)
