@@ -149,11 +149,11 @@ The acceptance criteria below define the testable behavior of each story.
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
 | ANS-01 | Grounded citations | Complete: verified streaming Ask and live multi-model benchmark promote GPT-4o Mini with 100% citation coverage and zero invalid citations (T06, T26-T32) |
 | ANS-02 | Abstention and verification | Complete: deterministic verification, calibrated abstention and live benchmark achieve 100% abstention accuracy on dataset v1 (T26, T29-T32) |
-| SEC-01 | Tenant/document isolation | In progress: signed principal context, authoritative policy enforcement and redacted cross-tenant audit events protect and expose security decisions (T16-T17, T33-T34, T36) |
+| SEC-01 | Tenant/document isolation | In progress: signed principal context, authoritative policy enforcement, redacted cross-tenant audit events and per-tenant/principal quotas protect and expose security decisions (T16-T17, T33-T34, T36-T37) |
 | SEC-02 | Untrusted-content and secret controls | Complete: prompt boundaries, grounded streaming, tenant-bound tool allowlists and HMAC-pseudonymized audit storage prevent corpus instructions and sensitive identifiers from crossing trust boundaries (T35-T36) |
 | AGT-01 | Bounded investigation | Pending |
 | AGT-02 | Agent promotion benchmark | Pending |
-| OPS-01 | Observability and degraded modes | In progress: ingestion recovery, bounded provider failures, BM25-only Ask degradation and durable queryable decision events are complete (T13, T20, T28, T31, T36) |
+| OPS-01 | Observability and degraded modes | In progress: ingestion recovery, bounded provider failures, BM25-only Ask degradation, durable decision events and deterministic quota failure modes are complete (T13, T20, T28, T31, T36-T37) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |
 | REL-01 | Pre-push and release gates | In progress: local gates and checker configuration complete (T02-T03) |
 

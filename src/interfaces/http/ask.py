@@ -8,7 +8,7 @@ from time import sleep
 from typing import Annotated, Protocol
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -27,6 +27,12 @@ from modules.answering.generator import (
 )
 from modules.answering.verifier import CitationVerifier
 from modules.policy.authorizer import Principal
+from modules.policy.quotas import (
+    QuotaEnforcer,
+    QuotaLease,
+    QuotaOperation,
+    QuotaOutcome,
+)
 from modules.retrieval.retriever import (
     EvidenceSet,
     QueryContext,
@@ -188,7 +194,10 @@ class AskBody(BaseModel):
 
 
 def create_ask_router(
-    executor: AskExecutor, authenticate: PrincipalDependency
+    executor: AskExecutor,
+    authenticate: PrincipalDependency,
+    *,
+    quotas: QuotaEnforcer | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/v1", tags=["answering"])
 
@@ -199,15 +208,27 @@ def create_ask_router(
         principal: Annotated[Principal, Depends(authenticate)],
     ) -> StreamingResponse:
         question = Question(str(uuid4()), body.question)
-        session = executor.start(question, principal)
+        lease = _reserve(quotas, principal)
+        try:
+            session = executor.start(question, principal)
+        except Exception:
+            if quotas is not None:
+                quotas.release(lease)
+            raise
         return StreamingResponse(
-            _stream(request, session), media_type="application/x-ndjson"
+            _stream(request, session, quotas, lease),
+            media_type="application/x-ndjson",
         )
 
     return router
 
 
-async def _stream(request: Request, session: AskSession) -> AsyncIterator[bytes]:
+async def _stream(
+    request: Request,
+    session: AskSession,
+    quotas: QuotaEnforcer | None = None,
+    lease: QuotaLease | None = None,
+) -> AsyncIterator[bytes]:
     try:
         for event in session:
             if await request.is_disconnected():
@@ -216,6 +237,23 @@ async def _stream(request: Request, session: AskSession) -> AsyncIterator[bytes]
             await asyncio.sleep(0)
     finally:
         session.cancel()
+        if quotas is not None:
+            quotas.release(lease)
+
+
+def _reserve(quotas: QuotaEnforcer | None, principal: Principal) -> QuotaLease | None:
+    if quotas is None:
+        return None
+    decision = quotas.acquire(principal, QuotaOperation.SEARCH)
+    if decision.outcome is QuotaOutcome.BACKEND_UNAVAILABLE:
+        raise HTTPException(status_code=503, detail="quota temporarily unavailable")
+    if decision.outcome is not QuotaOutcome.ALLOWED:
+        raise HTTPException(
+            status_code=429,
+            detail="quota exceeded",
+            headers={"Retry-After": str(decision.retry_after_seconds)},
+        )
+    return decision.lease
 
 
 def _final_answer(answer: GroundedAnswer, evidence_set: EvidenceSet) -> AskEvent:

@@ -986,7 +986,7 @@ existing public seams now emit denied cross-tenant authorization events
 every done-when outcome is asserted through returned state or persisted state, and
 the empty-key test prevents silently weakening pseudonymization.
 
-### T37: Add quotas and rate limits
+### T37: Add quotas and rate limits [x]
 
 **What**: Enforce per-principal and per-tenant limits for queries, ingestion and investigations.
 **Where**: `src/modules/policy/quotas.py`
@@ -997,7 +997,24 @@ the empty-key test prevents silently weakening pseudonymization.
 **Gate**: Full.
 **Commit**: `feat(policy): enforce tenant quotas`
 
-**Phase gate**: `make release-check`; zero cross-tenant disclosure in the adversarial suite; review threat assumptions before push.
+**Evidence**: `make pre-push` passed with 175 unit tests, 268 tests in the
+coverage run and 86% diff coverage after the quota files were staged; gitleaks
+and floor guard were clean. The policy enforces fixed-window burst limits,
+tenant-wide sharing, concurrency release and deterministic reset outcomes
+(`test_quotas.py:43-65`, `:76-79`). Backend failure returns a generic
+`backend_unavailable` decision without provider details (`:93-95`), while the
+HTTP boundary maps exhaustion to 429 plus `Retry-After` and backend failure to
+503 (`test_quota_routes.py:57-75`). PostgreSQL row locks and the migration are
+covered by a real integration flow for concurrent denial, release and shared
+tenant exhaustion (`test_quota_backend.py:43-45`). Adequacy A-D: PASS under
+`CONSTRAINTS.md`; fixed-window is an explicit pilot trade-off and the backend
+interface leaves room for Redis without changing policy callers.
+
+**Phase gate**: `make release-check` passed with 93 API, integration, evaluation
+and security tests; the 268-test pre-push suite, gitleaks and floor guard also
+remained green.
+
+**Phase gate**: passed; zero cross-tenant disclosure in the adversarial suite and threat assumptions reviewed before push.
 
 ---
 

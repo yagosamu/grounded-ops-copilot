@@ -8,6 +8,12 @@ from pydantic import BaseModel
 
 from interfaces.http.auth import PrincipalDependency
 from modules.policy.authorizer import Principal
+from modules.policy.quotas import (
+    QuotaEnforcer,
+    QuotaLease,
+    QuotaOperation,
+    QuotaOutcome,
+)
 from modules.retrieval.retriever import EvidenceSet, QueryContext, RetrievalUnavailable
 
 
@@ -73,7 +79,10 @@ def _response(result: EvidenceSet) -> SearchResponse:
 
 
 def create_search_router(
-    retriever: Retriever, authenticate: PrincipalDependency
+    retriever: Retriever,
+    authenticate: PrincipalDependency,
+    *,
+    quotas: QuotaEnforcer | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/v1/evidence", tags=["evidence"])
 
@@ -87,6 +96,7 @@ def create_search_router(
         document_id: Annotated[list[str] | None, Query()] = None,
         include_historical: bool = False,
     ) -> SearchResponse:
+        lease = _reserve(quotas, principal, QuotaOperation.SEARCH)
         try:
             result = retriever.retrieve(
                 QueryContext(
@@ -103,6 +113,28 @@ def create_search_router(
             raise HTTPException(
                 status_code=503, detail="retrieval temporarily unavailable"
             ) from error
+        finally:
+            if quotas is not None:
+                quotas.release(lease)
         return _response(result)
 
     return router
+
+
+def _reserve(
+    quotas: QuotaEnforcer | None,
+    principal: Principal,
+    operation: QuotaOperation,
+) -> QuotaLease | None:
+    if quotas is None:
+        return None
+    decision = quotas.acquire(principal, operation)
+    if decision.outcome is QuotaOutcome.BACKEND_UNAVAILABLE:
+        raise HTTPException(status_code=503, detail="quota temporarily unavailable")
+    if decision.outcome is not QuotaOutcome.ALLOWED:
+        raise HTTPException(
+            status_code=429,
+            detail="quota exceeded",
+            headers={"Retry-After": str(decision.retry_after_seconds)},
+        )
+    return decision.lease
