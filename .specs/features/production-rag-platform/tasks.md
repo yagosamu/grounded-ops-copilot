@@ -1043,7 +1043,7 @@ closed to `Ask` without exposing private error details
 `CONSTRAINTS.md`; no LLM is needed for this baseline, keeping routing deterministic
 and cheap while the later agent workflow remains bounded.
 
-### T39: Expose bounded investigation tools
+### T39: Expose bounded investigation tools [x]
 
 **What**: Wrap retrieval, version comparison and incident search as policy-aware typed tools.
 **Where**: `src/modules/investigation/tools.py`
@@ -1053,6 +1053,19 @@ and cheap while the later agent workflow remains bounded.
 **Tests**: unit and contract tests.
 **Gate**: Full.
 **Commit**: `feat(agent): add policy-aware investigation tools`
+
+**Evidence**: `make test` passed with 189 unit tests, 283 tests in the full
+coverage run and 89.85% total coverage. The three typed tools centralize policy
+checks, hard result limits, a shared timeout budget and redacted error categories
+(`src/modules/investigation/tools.py:26-337`). Retrieval is capped, version
+comparison reauthorizes both versions and incident search filters every returned
+document by the current policy (`tests/unit/modules/test_investigation_tools.py:151-285`).
+The public contract also proves all tools remain tenant-scoped and use the same
+deadline (`tests/integration/test_investigation_tools_contract.py:77-112`).
+Adequacy A-D: PASS under `CONSTRAINTS.md`; the synchronous thread deadline is a
+portable baseline, while adapters can later replace it with native client timeouts
+without changing graph-facing tool contracts. The pre-push gate also passed with
+91% diff coverage; gitleaks and floor guard were clean.
 
 ### T40: Implement the bounded investigation graph
 
