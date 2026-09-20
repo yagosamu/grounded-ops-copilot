@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 6 in progress; T37 and the Phase 5 gate are complete.
-- **Completed**: T01-T37, including durable audit decisions and shared tenant/principal quotas.
+- **Phase / Task**: Phase 6 in progress; T38 is complete and T37 closed Phase 5.
+- **Completed**: T01-T38, including deterministic Ask/Investigate routing with fail-closed fallback.
 - **In-progress**: none.
-- **Next step**: T38, model bounded investigation state and lifecycle transitions.
+- **Next step**: T39, expose policy-aware bounded investigation tools.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T37 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T38 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

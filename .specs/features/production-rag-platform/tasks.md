@@ -1022,7 +1022,7 @@ remained green.
 
 **Outcome**: Complex investigations run asynchronously with explicit budgets and only become default when they beat standard RAG.
 
-### T38: Implement query routing
+### T38: Implement query routing [x]
 
 **What**: Route questions to `Ask` or `Investigate` with an auditable reason and deterministic fallback.
 **Where**: `src/modules/routing/query_router.py`
@@ -1032,6 +1032,16 @@ remained green.
 **Tests**: unit tests and routing golden set.
 **Gate**: Quick.
 **Commit**: `feat(routing): classify ask and investigate requests`
+
+**Evidence**: `make check` passed with 180 unit tests; formatting, Ruff and strict
+Mypy were clean. The router uses explicit, reviewable heuristics and records the
+selected path, reason and fallback flag (`src/modules/routing/query_router.py:12-111`).
+The golden cases prove simple questions stay on `Ask`, clear multi-hop questions
+select `Investigate`, and ambiguous, malicious or classifier-failure cases fail
+closed to `Ask` without exposing private error details
+(`tests/unit/modules/test_query_router.py:16-68`). Adequacy A-D: PASS under
+`CONSTRAINTS.md`; no LLM is needed for this baseline, keeping routing deterministic
+and cheap while the later agent workflow remains bounded.
 
 ### T39: Expose bounded investigation tools
 
