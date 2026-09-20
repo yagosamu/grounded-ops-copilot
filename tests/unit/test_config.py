@@ -36,12 +36,16 @@ def test_application_factory_mounts_protected_routes_with_authentication() -> No
         return authorizer.Principal("alice", "alpha", (), ())
 
     app = application.create_app(
-        retriever=object(), ask_executor=object(), authenticator=authenticate
+        retriever=object(),
+        ask_executor=object(),
+        investigation_lifecycle=object(),
+        authenticator=authenticate,
     )
 
     assert set(app.openapi()["paths"]) >= {
         "/v1/evidence/search",
         "/v1/ask",
+        "/v1/investigations",
     }
 
 

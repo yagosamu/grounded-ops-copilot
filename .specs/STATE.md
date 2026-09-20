@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 6 in progress; T40 is complete and T37 closed Phase 5.
-- **Completed**: T01-T40, including the PostgreSQL-checkpointed bounded investigation workflow.
+- **Phase / Task**: Phase 6 in progress; T41 is complete and T37 closed Phase 5.
+- **Completed**: T01-T41, including the owned asynchronous investigation API.
 - **In-progress**: none.
-- **Next step**: T41, expose owned asynchronous investigation lifecycle routes.
+- **Next step**: T42, benchmark agentic value against the deterministic Ask baseline.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T40 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: T41 implementation and evidence pending its atomic commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

@@ -1093,7 +1093,7 @@ assertion, no test is shallow, and every test maps to AGT-01 or the task's durab
 resume requirement. The pre-push gate also passed with 91% diff coverage;
 gitleaks and floor guard were clean.
 
-### T41: Expose asynchronous investigation routes
+### T41: Expose asynchronous investigation routes [x]
 
 **What**: Add create, status, cancel and report endpoints without exposing internal chain-of-thought.
 **Where**: `src/interfaces/http/investigations.py`
@@ -1103,6 +1103,21 @@ gitleaks and floor guard were clean.
 **Tests**: API/E2E lifecycle tests.
 **Gate**: Full.
 **Commit**: `feat(api): expose asynchronous investigations`
+
+**Evidence**: `make test` passed with 199 unit tests, 300 tests in the full
+coverage run and 89.89% total coverage. Creation persists a bounded job and only
+enqueues its opaque id; status, cancellation and report reads never execute graph
+work inside the request (`src/interfaces/http/investigations.py:72-135`). The API
+exposes progress and final evidence but omits the question, plan and internal graph
+node (`:182-341`). Lifecycle tests prove asynchronous create/status/report behavior
+(`tests/api/test_investigations.py:100-145`), durable idempotent identity and payload
+conflict (`:148-167`), indistinguishable cross-principal and cross-tenant misses
+(`:170-190`), cancellation semantics (`:193-222`) and redacted queue failure
+(`:225-251`). Adequacy A-D: PASS under `CONSTRAINTS.md`; every done-when path has
+an exact HTTP status/body assertion, ownership covers every resource route, and no
+test relies on chain-of-thought or internal planner state.
+The pre-push gate also passed with 98% diff coverage; gitleaks and floor guard
+were clean.
 
 ### T42: Benchmark agentic value
 

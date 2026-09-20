@@ -5,18 +5,21 @@ from fastapi import FastAPI
 from interfaces.http.ask import AskExecutor, create_ask_router
 from interfaces.http.auth import PrincipalDependency
 from interfaces.http.health import create_health_router
+from interfaces.http.investigations import InvestigationAPI, create_investigation_router
 from interfaces.http.search import Retriever, create_search_router
 
 
 def create_app(
     retriever: Retriever | None = None,
     ask_executor: AskExecutor | None = None,
+    investigation_lifecycle: InvestigationAPI | None = None,
     authenticator: PrincipalDependency | None = None,
 ) -> FastAPI:
     """Create the HTTP application without connecting to infrastructure."""
     app = FastAPI(title="GroundedOps")
     app.include_router(create_health_router({}))
-    if (retriever is not None or ask_executor is not None) and authenticator is None:
+    protected = (retriever, ask_executor, investigation_lifecycle)
+    if any(item is not None for item in protected) and authenticator is None:
         raise ValueError("protected routes require an authenticator")
     if retriever is not None:
         if authenticator is None:
@@ -26,4 +29,10 @@ def create_app(
         if authenticator is None:
             raise ValueError("protected routes require an authenticator")
         app.include_router(create_ask_router(ask_executor, authenticator))
+    if investigation_lifecycle is not None:
+        if authenticator is None:
+            raise ValueError("protected routes require an authenticator")
+        app.include_router(
+            create_investigation_router(investigation_lifecycle, authenticator)
+        )
     return app
