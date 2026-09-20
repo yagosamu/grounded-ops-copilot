@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 6 in progress; T39 is complete and T37 closed Phase 5.
-- **Completed**: T01-T39, including policy-aware bounded retrieval, version comparison and incident search tools.
+- **Phase / Task**: Phase 6 in progress; T40 is complete and T37 closed Phase 5.
+- **Completed**: T01-T40, including the PostgreSQL-checkpointed bounded investigation workflow.
 - **In-progress**: none.
-- **Next step**: T40, implement the bounded investigation graph and lifecycle state.
+- **Next step**: T41, expose owned asynchronous investigation lifecycle routes.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T39 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T40 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

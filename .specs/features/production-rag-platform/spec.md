@@ -151,7 +151,7 @@ The acceptance criteria below define the testable behavior of each story.
 | ANS-02 | Abstention and verification | Complete: deterministic verification, calibrated abstention and live benchmark achieve 100% abstention accuracy on dataset v1 (T26, T29-T32) |
 | SEC-01 | Tenant/document isolation | In progress: signed principal context, authoritative policy enforcement, redacted cross-tenant audit events and per-tenant/principal quotas protect and expose security decisions (T16-T17, T33-T34, T36-T37) |
 | SEC-02 | Untrusted-content and secret controls | Complete: prompt boundaries, grounded streaming, tenant-bound tool allowlists and HMAC-pseudonymized audit storage prevent corpus instructions and sensitive identifiers from crossing trust boundaries (T35-T36) |
-| AGT-01 | Bounded investigation | In progress: deterministic Ask/Investigate routing with auditable reasons and fail-closed fallback (T38) |
+| AGT-01 | Bounded investigation | In progress: deterministic routing, policy-aware tools and a PostgreSQL-checkpointed workflow enforce step, duration, token, tool and retrieval budgets with typed partial reports (T38-T40) |
 | AGT-02 | Agent promotion benchmark | Pending |
 | OPS-01 | Observability and degraded modes | In progress: ingestion recovery, bounded provider failures, BM25-only Ask degradation, durable decision events and deterministic quota failure modes are complete (T13, T20, T28, T31, T36-T37) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |

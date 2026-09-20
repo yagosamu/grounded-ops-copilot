@@ -1067,7 +1067,7 @@ portable baseline, while adapters can later replace it with native client timeou
 without changing graph-facing tool contracts. The pre-push gate also passed with
 91% diff coverage; gitleaks and floor guard were clean.
 
-### T40: Implement the bounded investigation graph
+### T40: Implement the bounded investigation graph [x]
 
 **What**: Add plan, retrieve, compare, verify and report nodes with durable state and stopping rules.
 **Where**: `src/modules/investigation/workflow.py`
@@ -1077,6 +1077,21 @@ without changing graph-facing tool contracts. The pre-push gate also passed with
 **Tests**: graph transition unit tests and agentic integration tests.
 **Gate**: Full.
 **Commit**: `feat(agent): orchestrate bounded investigations`
+
+**Evidence**: `make test` passed with 199 unit tests, 294 tests in the full
+coverage run and 89.43% total coverage. The state machine persists one revision
+after each `plan`, `retrieve`, `compare`, `verify` and `report` node, and the final
+report carries evidence, tool actions, unresolved questions, tokens, cost, duration
+and a typed stop reason (`test_investigation_workflow.py:184-216`). Dedicated
+assertions cover insufficient evidence (`:219-238`), step, duration and token
+budgets (`:241-277`), tool and retrieval budgets (`:280-307`), redacted tool
+failure (`:310-324`), cancellation (`:327-336`) and resume (`:339-353`). A real
+PostgreSQL checkpoint resumes in a new transaction and preserves owner, revision
+and terminal state (`test_investigation_persistence.py:65-103`). Adequacy A-D:
+PASS under `CONSTRAINTS.md`; every done-when path has an exact state/stop-reason
+assertion, no test is shallow, and every test maps to AGT-01 or the task's durable
+resume requirement. The pre-push gate also passed with 91% diff coverage;
+gitleaks and floor guard were clean.
 
 ### T41: Expose asynchronous investigation routes
 
