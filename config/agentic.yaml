@@ -1,0 +1,15 @@
+version: 1
+investigate:
+  enabled: false
+  enabled_task_classes: []
+budgets:
+  max_steps: 12
+  max_duration_seconds: 120
+  max_tokens: 20000
+  max_tool_calls: 8
+  max_retrieval_attempts: 5
+benchmark:
+  report: evals/agentic/reports/agentic-v1.json
+  report_sha256: f7d5599891b0e2f0cafb1b6bc94804cce744f03f33853dcd81e688fa4d51a9c8
+  minimum_success_gain: 0.10
+  maximum_cost_ratio: 2.5

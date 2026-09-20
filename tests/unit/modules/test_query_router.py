@@ -22,7 +22,7 @@ def test_simple_question_stays_on_the_deterministic_ask_path() -> None:
 
 
 def test_multi_hop_question_selects_investigate_with_a_reason() -> None:
-    decision = QueryRouter().route(
+    decision = QueryRouter(investigate_enabled=True).route(
         Question(
             "q-2",
             "Which deploy changed the collector and what incident did it cause?",
@@ -32,6 +32,16 @@ def test_multi_hop_question_selects_investigate_with_a_reason() -> None:
     assert decision.route is Route.INVESTIGATE
     assert decision.reason is RouteReason.MULTI_HOP
     assert decision.fallback_used is False
+
+
+def test_multi_hop_defaults_to_ask_until_agent_is_promoted() -> None:
+    decision = QueryRouter().route(
+        Question("q-2-default", "Which deploy changed the collector?"),
+    )
+
+    assert decision.route is Route.ASK
+    assert decision.reason is RouteReason.MULTI_HOP
+    assert decision.fallback_used is True
 
 
 def test_ambiguous_question_falls_back_to_ask() -> None:

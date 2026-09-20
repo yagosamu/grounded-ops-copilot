@@ -92,8 +92,14 @@ class HeuristicQueryClassifier:
 class QueryRouter:
     """Select a workflow and fail closed to the simpler Ask path."""
 
-    def __init__(self, classifier: RoutingClassifier | None = None) -> None:
+    def __init__(
+        self,
+        classifier: RoutingClassifier | None = None,
+        *,
+        investigate_enabled: bool = False,
+    ) -> None:
         self._classifier = classifier or HeuristicQueryClassifier()
+        self._investigate_enabled = investigate_enabled
 
     def route(self, question: Question) -> RoutingDecision:
         """Return an auditable decision without exposing classifier internals."""
@@ -105,7 +111,11 @@ class QueryRouter:
         if not isinstance(reason, RouteReason):
             return RoutingDecision(Route.ASK, RouteReason.ROUTER_FAILURE, True)
         if reason is RouteReason.MULTI_HOP:
-            return RoutingDecision(Route.INVESTIGATE, reason, False)
+            return RoutingDecision(
+                Route.INVESTIGATE if self._investigate_enabled else Route.ASK,
+                reason,
+                not self._investigate_enabled,
+            )
         if reason in (RouteReason.AMBIGUOUS, RouteReason.MALICIOUS):
             return RoutingDecision(Route.ASK, reason, True)
         return RoutingDecision(Route.ASK, reason, False)

@@ -1147,7 +1147,7 @@ all tests map to AGT-02/T42, and limitations explicitly prevent synthetic replay
 latency from being presented as production traffic. Gitleaks and floor guard were
 clean.
 
-### T43: Decide agent production routing
+### T43: Decide agent production routing [x]
 
 **What**: Record whether the agent qualifies, plus its enabled task classes and budgets.
 **Where**: `docs/decisions/ADR-002-agent-routing.md`
@@ -1157,6 +1157,22 @@ clean.
 **Tests**: routing configuration regression tests.
 **Gate**: Release.
 **Commit**: `docs(architecture): decide agent production routing`
+
+**Evidence**: `make release-check` passed with 203 unit tests, 309 tests in the
+coverage run, 89.70% total coverage and 106 release-selected tests. ADR-002 links
+the immutable benchmark, explains the 2.7x cost rejection and records the five
+bounded budgets (`docs/decisions/ADR-002-agent-routing.md:7-47`). The loader checks
+config version, task classes, positive budgets, benchmark hash and thresholds
+(`src/modules/routing/config.py:26-78`). Configuration tests prove the disabled
+production default, every budget and threshold, Ask fallback, tamper detection and
+the invariant that a disabled agent cannot enable a task class
+(`tests/unit/modules/test_routing_config.py:15-66`). Query-router tests preserve
+explicit opt-in for multi-hop and verify default fallback to Ask
+(`tests/unit/modules/test_query_router.py:23-42`). Adequacy A-D: PASS under
+`CONSTRAINTS.md`; the ADR and executable config express the same decision, and no
+code-only toggle can silently promote the agent. Gitleaks and floor guard were
+clean. The final pre-push run confirmed 86% diff coverage; no secrets were found
+and the floor guard was clean.
 
 **Phase gate**: `make release-check`; agent remains opt-in unless every promotion criterion passes.
 
