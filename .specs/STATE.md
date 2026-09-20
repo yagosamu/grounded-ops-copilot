@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 6 in progress; T41 is complete and T37 closed Phase 5.
-- **Completed**: T01-T41, including the owned asynchronous investigation API.
+- **Phase / Task**: Phase 6 in progress; T42 is complete and T37 closed Phase 5.
+- **Completed**: T01-T42, including the reproducible Ask-versus-Investigate benchmark.
 - **In-progress**: none.
-- **Next step**: T42, benchmark agentic value against the deterministic Ask baseline.
+- **Next step**: T43, record and enforce the agent production-routing decision.
 - **Blockers**: none.
-- **Uncommitted files**: T41 implementation and evidence pending its atomic commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: T42 benchmark and evidence pending its atomic commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

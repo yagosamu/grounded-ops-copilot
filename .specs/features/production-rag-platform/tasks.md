@@ -1119,7 +1119,7 @@ test relies on chain-of-thought or internal planner state.
 The pre-push gate also passed with 98% diff coverage; gitleaks and floor guard
 were clean.
 
-### T42: Benchmark agentic value
+### T42: Benchmark agentic value [x]
 
 **What**: Compare `Investigate` with `Ask` on frozen multi-hop tasks, cost, latency and failure rate.
 **Where**: `evals/agentic/benchmark.py`
@@ -1129,6 +1129,23 @@ were clean.
 **Tests**: evaluator correctness and repeatability tests.
 **Gate**: Release.
 **Commit**: `test(agent): compare investigation against rag baseline`
+
+**Evidence**: `make release-check` passed with 199 unit tests, 305 tests in the
+coverage run, 89.85% total coverage and 106 release-selected API, integration,
+eval, agentic and security tests. The evaluator calculates absolute and relative
+success deltas, mean-cost ratio, p95 ratio and per-path failure categories, then
+applies the approved 10% relative success and 2.5x cost thresholds
+(`evals/agentic/benchmark.py:88-179`). Exact assertions cover every metric and a
+qualifying candidate (`tests/agentic/test_benchmark.py:66-76`), each independent
+threshold rejection (`:79-120`), repeatable report generation and the required
+timeout, tool-failure and insufficient-evidence categories (`:123-144`), plus
+invalid measurement sets (`:147-175`). The frozen v1 replay measured Ask at 50%
+success and Investigate at 62.5%: +12.5 percentage points, +25% relative, 2.7x
+cost and 3.94x p95. Investigate is not qualified because cost exceeds 2.5x.
+Adequacy A-D: PASS under `CONSTRAINTS.md`; the committed report equals a fresh run,
+all tests map to AGT-02/T42, and limitations explicitly prevent synthetic replay
+latency from being presented as production traffic. Gitleaks and floor guard were
+clean.
 
 ### T43: Decide agent production routing
 

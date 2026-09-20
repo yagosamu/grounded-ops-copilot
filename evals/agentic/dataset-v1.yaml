@@ -1,0 +1,116 @@
+dataset_id: groundedops-agentic-v1
+version: 1
+judge_version: exact-fact-id-v1
+measurement_mode: deterministic workflow replay
+limitations:
+  - dataset v1 contains eight synthetic multi-hop incident tasks
+  - costs and latency are frozen replay measurements, not production traffic
+  - no latency promotion threshold is approved; p95 ratio is informational
+cases:
+  - id: current-recovery-procedure
+    question: Which current runbook steps recover the collector after this failure?
+    expected_fact_ids: [current-runbook, recovery-steps]
+  - id: similar-incident
+    question: Which earlier incident has the same symptoms and resolution?
+    expected_fact_ids: [incident-match, incident-resolution]
+  - id: likely-regression
+    question: Which change most likely introduced this collector regression?
+    expected_fact_ids: [version-change, regression-link]
+  - id: guidance-validity
+    question: Is the old recovery guidance still valid for the current version?
+    expected_fact_ids: [old-guidance, current-validity]
+  - id: compare-remediations
+    question: Compare the remediations used in the three related incidents.
+    expected_fact_ids: [incident-remediations, remediation-difference]
+  - id: dependency-impact
+    question: Which dependency change affected the service and why?
+    expected_fact_ids: [dependency-change, service-impact]
+  - id: timeout-scenario
+    question: Correlate the deployment, alerts and incident timeline under a deadline.
+    expected_fact_ids: [deployment-time, alert-correlation]
+  - id: conflicting-sources
+    question: Resolve the conflict between the runbook and post-mortem guidance.
+    expected_fact_ids: [source-conflict, authoritative-guidance]
+observations:
+  ask:
+    - case_id: current-recovery-procedure
+      fact_ids: [current-runbook, recovery-steps]
+      outcome: completed
+      latency_ms: 920
+      cost_usd: 0.001
+    - case_id: similar-incident
+      fact_ids: [incident-match, incident-resolution]
+      outcome: completed
+      latency_ms: 980
+      cost_usd: 0.001
+    - case_id: likely-regression
+      fact_ids: [version-change, regression-link]
+      outcome: completed
+      latency_ms: 1010
+      cost_usd: 0.001
+    - case_id: guidance-validity
+      fact_ids: [old-guidance, current-validity]
+      outcome: completed
+      latency_ms: 1040
+      cost_usd: 0.001
+    - case_id: compare-remediations
+      fact_ids: [incident-remediations]
+      outcome: completed
+      latency_ms: 1090
+      cost_usd: 0.001
+    - case_id: dependency-impact
+      fact_ids: [dependency-change]
+      outcome: completed
+      latency_ms: 1130
+      cost_usd: 0.001
+    - case_id: timeout-scenario
+      fact_ids: [deployment-time]
+      outcome: completed
+      latency_ms: 1180
+      cost_usd: 0.001
+    - case_id: conflicting-sources
+      fact_ids: [source-conflict]
+      outcome: completed
+      latency_ms: 1220
+      cost_usd: 0.001
+  investigate:
+    - case_id: current-recovery-procedure
+      fact_ids: [current-runbook, recovery-steps]
+      outcome: completed
+      latency_ms: 3100
+      cost_usd: 0.0027
+    - case_id: similar-incident
+      fact_ids: [incident-match, incident-resolution]
+      outcome: completed
+      latency_ms: 3250
+      cost_usd: 0.0027
+    - case_id: likely-regression
+      fact_ids: [version-change, regression-link]
+      outcome: completed
+      latency_ms: 3400
+      cost_usd: 0.0027
+    - case_id: guidance-validity
+      fact_ids: [old-guidance, current-validity]
+      outcome: completed
+      latency_ms: 3550
+      cost_usd: 0.0027
+    - case_id: compare-remediations
+      fact_ids: [incident-remediations, remediation-difference]
+      outcome: completed
+      latency_ms: 3800
+      cost_usd: 0.0027
+    - case_id: dependency-impact
+      fact_ids: []
+      outcome: tool_failure
+      latency_ms: 4100
+      cost_usd: 0.0027
+    - case_id: timeout-scenario
+      fact_ids: []
+      outcome: timeout
+      latency_ms: 5000
+      cost_usd: 0.0027
+    - case_id: conflicting-sources
+      fact_ids: []
+      outcome: insufficient_evidence
+      latency_ms: 4300
+      cost_usd: 0.0027
