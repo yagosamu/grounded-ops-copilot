@@ -3,8 +3,10 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Protocol
+from uuid import uuid4
 
 from domain.ingestion import validate_identifier
+from modules.audit.recorder import AuditReason, AuditRecorder
 from modules.policy.authorizer import Authorizer, Decision, Principal, ResourceAction
 
 
@@ -84,9 +86,12 @@ class PolicyViolation(RuntimeError):
 class PolicyEnforcer:
     """Expose one small authorization seam backed by current metadata."""
 
-    def __init__(self, store: DocumentPolicyStore) -> None:
+    def __init__(
+        self, store: DocumentPolicyStore, audit: AuditRecorder | None = None
+    ) -> None:
         self._store = store
         self._authorizer = Authorizer()
+        self._audit = audit or AuditRecorder.ephemeral()
 
     def search_scope(self, principal: Principal) -> SearchScope | None:
         if not principal.known:
@@ -102,16 +107,36 @@ class PolicyEnforcer:
         )
 
     def authorize_reads(
-        self, principal: Principal, references: tuple[DocumentRef, ...]
+        self,
+        principal: Principal,
+        references: tuple[DocumentRef, ...],
+        correlation_id: str | None = None,
     ) -> dict[DocumentRef, AuthorizedDocument]:
+        correlation = correlation_id or uuid4().hex
+        unique_references = tuple(dict.fromkeys(references))
         if not principal.known:
+            for reference in unique_references:
+                self._record_authorization(
+                    principal,
+                    reference,
+                    False,
+                    AuditReason.UNKNOWN_PRINCIPAL,
+                    correlation,
+                )
             return {}
+        for reference in unique_references:
+            if reference.tenant_id != principal.tenant_id:
+                self._record_authorization(
+                    principal,
+                    reference,
+                    False,
+                    AuditReason.CROSS_TENANT,
+                    correlation,
+                )
         scoped = tuple(
-            dict.fromkeys(
-                reference
-                for reference in references
-                if reference.tenant_id == principal.tenant_id
-            )
+            reference
+            for reference in unique_references
+            if reference.tenant_id == principal.tenant_id
         )
         if not scoped:
             return {}
@@ -126,6 +151,13 @@ class PolicyEnforcer:
                 or policy.document_id != reference.document_id
                 or policy.document_version_id != reference.document_version_id
             ):
+                self._record_authorization(
+                    principal,
+                    reference,
+                    False,
+                    AuditReason.POLICY_DENIED,
+                    correlation,
+                )
                 continue
             decision = self._authorizer.authorize(
                 principal,
@@ -136,9 +168,33 @@ class PolicyEnforcer:
                     policy.policy,
                 ),
             )
+            self._record_authorization(
+                principal,
+                reference,
+                decision.allowed,
+                AuditReason(decision.reason.value),
+                correlation,
+            )
             if decision.allowed:
                 authorized[reference] = AuthorizedDocument(policy, decision)
         return authorized
+
+    def _record_authorization(
+        self,
+        principal: Principal,
+        reference: DocumentRef,
+        allowed: bool,
+        reason: AuditReason,
+        correlation_id: str,
+    ) -> None:
+        self._audit.record_authorization(
+            tenant_id=principal.tenant_id,
+            principal_id=principal.id,
+            document_id=reference.document_id,
+            allowed=allowed,
+            reason=reason,
+            correlation_id=correlation_id,
+        )
 
     def validate_projections(self, projections: tuple[ProjectionView, ...]) -> None:
         by_tenant: dict[str, list[ProjectionView]] = {}

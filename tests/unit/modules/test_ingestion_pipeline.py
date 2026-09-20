@@ -9,6 +9,11 @@ import pytest
 from adapters.postgres.ingestion_repository import Submission
 from adapters.sources.markdown import SourceEvent
 from domain.ingestion import Document, DocumentVersion, IngestionJob, JobState, Source
+from modules.audit.recorder import (
+    AuditCategory,
+    AuditOutcome,
+    AuditQuery,
+)
 from modules.chunking.structural import StructuralChunker
 from modules.ingestion.pipeline import (
     IndexPreparationError,
@@ -203,6 +208,19 @@ def test_partial_index_failure_resumes_idempotently_and_repeat_is_a_noop() -> No
         chunk.chunker_version == "structural-1" for chunk in completed.prepared_chunks
     )
     assert len(store.puts) == 2
+    audit_events = subject.audit.query(AuditQuery(tenant_id="alpha"))
+    assert tuple(event.category for event in audit_events) == (
+        AuditCategory.INGESTION,
+        AuditCategory.INDEX_PROMOTION,
+        AuditCategory.INGESTION,
+        AuditCategory.INGESTION,
+    )
+    assert tuple(event.outcome for event in audit_events) == (
+        AuditOutcome.RETRYING,
+        AuditOutcome.PROMOTED,
+        AuditOutcome.COMPLETED,
+        AuditOutcome.COMPLETED,
+    )
 
 
 def test_retry_exhaustion_emits_redacted_dlq_and_stays_terminal() -> None:

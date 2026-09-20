@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 5 in progress; T35 complete and T36 is next.
-- **Completed**: T01-T35, including prompt, streaming and tool-policy boundaries for untrusted corpus content.
+- **Phase / Task**: Phase 5 in progress; T36 complete and T37 is next.
+- **Completed**: T01-T36, including durable queryable audit decisions with HMAC-pseudonymized identifiers.
 - **In-progress**: none.
-- **Next step**: T36, record queryable security decisions as redacted audit events.
+- **Next step**: T37, enforce deterministic per-principal and per-tenant quotas and rate limits.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T35 commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T36 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

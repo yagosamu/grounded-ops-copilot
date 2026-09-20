@@ -6,6 +6,7 @@ from hashlib import sha256
 from typing import Protocol
 
 from domain.ingestion import Document, DocumentVersion, IngestionJob, JobState, Source
+from modules.audit.recorder import AuditOutcome, AuditRecorder
 from modules.chunking.structural import Chunk, ProvenanceSpan, StructuralChunker
 from modules.ingestion.errors import ArtifactFailure
 from modules.parsing.parser import MarkdownParser, ParserInputError
@@ -123,6 +124,7 @@ class IngestionPipeline:
         chunker: StructuralChunker,
         index_sink: IndexPreparationSink,
         max_attempts: int,
+        audit: AuditRecorder | None = None,
     ) -> None:
         if max_attempts <= 0:
             raise ValueError("max_attempts must be positive")
@@ -132,6 +134,7 @@ class IngestionPipeline:
         self.chunker = chunker
         self.index_sink = index_sink
         self.max_attempts = max_attempts
+        self.audit = audit or AuditRecorder.ephemeral()
 
     def run(self, event: SourceEventView) -> PipelineOutcome:
         if event.kind == "deleted":
@@ -140,6 +143,11 @@ class IngestionPipeline:
             )
             if document is not None:
                 self.repository.delete(event.source.tenant_id, document.id)
+            self.audit.record_ingestion(
+                tenant_id=event.source.tenant_id,
+                job_id=document.id if document else event.canonical_key,
+                outcome=AuditOutcome.DELETED,
+            )
             return PipelineOutcome(
                 "deleted", None, None, document.id if document else None
             )
@@ -219,6 +227,12 @@ class IngestionPipeline:
                 prepared = self._prepare(event, submission, chunks)
                 self.index_sink.prepare(prepared)
                 self.repository.promote(event.source.tenant_id, submission.version.id)
+                self.audit.record_index_promotion(
+                    tenant_id=event.source.tenant_id,
+                    version_id=submission.version.id,
+                    promoted=True,
+                    correlation_id=job.id,
+                )
                 job = self.repository.save_job(job.transition(JobState.COMPLETED))
             return self._outcome(submission, job, prepared)
         except (ArtifactFailure, ParserInputError, IndexPreparationError) as error:
@@ -279,12 +293,24 @@ class IngestionPipeline:
             raise PipelineInputError("invalid source event")
         return event.content
 
-    @staticmethod
     def _outcome(
+        self,
         submission: SubmissionView,
         job: IngestionJob,
         prepared: tuple[PreparedChunk, ...],
     ) -> PipelineOutcome:
+        outcomes = {
+            JobState.RETRYING: AuditOutcome.RETRYING,
+            JobState.COMPLETED: AuditOutcome.COMPLETED,
+            JobState.FAILED: AuditOutcome.FAILED,
+        }
+        if audit_outcome := outcomes.get(job.state):
+            self.audit.record_ingestion(
+                tenant_id=job.tenant_id,
+                job_id=job.id,
+                outcome=audit_outcome,
+                correlation_id=job.id,
+            )
         dlq = (
             DeadLetter(
                 job.id, job.idempotency_key, job.error_class or "unknown", job.attempts

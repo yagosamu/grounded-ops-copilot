@@ -1,9 +1,17 @@
 """One authoritative policy seam protects reads and index projections."""
 
 from dataclasses import dataclass
+from hashlib import sha256
 
 import pytest
 
+from modules.audit.recorder import (
+    AuditCategory,
+    AuditOutcome,
+    AuditQuery,
+    AuditRecorder,
+    InMemoryAuditStore,
+)
 from modules.policy.authorizer import AuthorizationReason, Principal
 from modules.policy.enforcement import (
     DocumentPolicy,
@@ -71,7 +79,10 @@ def test_authorizes_metadata_in_batch_without_querying_cross_tenant_ids() -> Non
             policy("foreign", ("public",), tenant_id="beta"),
         )
     )
-    enforcer = PolicyEnforcer(store)
+    audit = AuditRecorder(
+        InMemoryAuditStore(), sha256(b"policy-audit-fixture").digest()
+    )
+    enforcer = PolicyEnforcer(store, audit)
     principal = Principal("alice", "alpha", ("engineer",), ())
     allowed = DocumentRef("alpha", "allowed", "version-1")
     denied = DocumentRef("alpha", "denied", "version-1")
@@ -83,6 +94,15 @@ def test_authorizes_metadata_in_batch_without_querying_cross_tenant_ids() -> Non
     assert result[allowed].decision.reason is AuthorizationReason.ROLE
     assert result[allowed].policy.policy == ("role:engineer",)
     assert store.requests == [("alpha", (allowed, denied))]
+    events = audit.query(
+        AuditQuery(tenant_id="alpha", category=AuditCategory.AUTHORIZATION)
+    )
+    assert tuple(event.outcome for event in events) == (
+        AuditOutcome.DENIED,
+        AuditOutcome.ALLOWED,
+        AuditOutcome.DENIED,
+    )
+    assert len(audit.query(AuditQuery(tenant_id="alpha", resource_id="foreign"))) == 1
 
 
 @pytest.mark.unit

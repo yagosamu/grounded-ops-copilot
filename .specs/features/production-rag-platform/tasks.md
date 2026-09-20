@@ -960,7 +960,7 @@ calls (`test_openai_generation_contract.py:167-171` and
 done-when attack has an exact outcome assertion and the legitimate stream contract
 still passes.
 
-### T36: Add redacted audit events
+### T36: Add redacted audit events [x]
 
 **What**: Record authorization, ingestion, index promotion and investigation decisions without storing document content or secrets.
 **Where**: `src/modules/audit/recorder.py`
@@ -970,6 +970,21 @@ still passes.
 **Tests**: unit and integration audit tests.
 **Gate**: Full.
 **Commit**: `feat(audit): record redacted security events`
+
+**Evidence**: `make pre-push` passed with 170 unit tests, 260 tests in the coverage
+run, 90.48% total coverage and 96% diff coverage; gitleaks and floor guard were
+clean. The recorder exposes four typed decisions and no
+free-form payload: authorization, ingestion, index promotion and investigation
+(`test_audit_recorder.py:69-98`). HMAC references keep tenant, actor, resource and
+correlation identifiers queryable from their original values without persisting
+them in clear text (`:100-103`, `:134-136`). PostgreSQL integration proves all four
+categories survive migration and remain filterable while the raw database row
+contains none of the sensitive fixture values (`test_audit_store.py:77-87`). The
+existing public seams now emit denied cross-tenant authorization events
+(`test_policy_enforcement.py:100-105`) and ingestion/promotion lifecycle events
+(`test_ingestion_pipeline.py:212-223`). Adequacy A-D: PASS under `CONSTRAINTS.md`;
+every done-when outcome is asserted through returned state or persisted state, and
+the empty-key test prevents silently weakening pseudonymization.
 
 ### T37: Add quotas and rate limits
 
