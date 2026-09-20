@@ -211,6 +211,9 @@ def test_openai_responses_stream_yields_delta_and_parsed_terminal_usage(
 
     assert requests[0]["stream"] is True
     assert requests[0]["store"] is False
+    assert requests[0]["tools"] == []
+    assert requests[0]["tool_choice"] == "none"
+    assert requests[0]["parallel_tool_calls"] is False
     assert requests[0]["text"]["format"]["type"] == "json_schema"
     assert stream[0] == GenerationDelta("TracerProvider provides ")
     assert isinstance(stream[1], GenerationCompleted)

@@ -164,7 +164,11 @@ def test_openai_responses_structured_output_contract(
     assert request["model"] == "gpt-5.6-luna"
     assert request["store"] is False
     assert request["max_output_tokens"] == 500
+    assert request["tools"] == []
+    assert request["tool_choice"] == "none"
+    assert request["parallel_tool_calls"] is False
     assert "Copy the factual wording" in request["instructions"]
+    assert "untrusted data" in request["instructions"]
     assert "do not paraphrase" in request["instructions"]
     assert request["input"][0]["role"] == "user"
     assert "chunk-1" in request["input"][0]["content"]

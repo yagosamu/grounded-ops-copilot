@@ -150,7 +150,7 @@ The acceptance criteria below define the testable behavior of each story.
 | ANS-01 | Grounded citations | Complete: verified streaming Ask and live multi-model benchmark promote GPT-4o Mini with 100% citation coverage and zero invalid citations (T06, T26-T32) |
 | ANS-02 | Abstention and verification | Complete: deterministic verification, calibrated abstention and live benchmark achieve 100% abstention accuracy on dataset v1 (T26, T29-T32) |
 | SEC-01 | Tenant/document isolation | In progress: signed principal context and authoritative policy enforcement now protect metadata, index writes, retrieval and citation resolution (T16-T17, T33-T34) |
-| SEC-02 | Untrusted-content and secret controls | Pending |
+| SEC-02 | Untrusted-content and secret controls | In progress: prompt boundaries, grounded streaming and tenant-bound tool allowlists isolate corpus instructions; audit redaction remains pending (T35) |
 | AGT-01 | Bounded investigation | Pending |
 | AGT-02 | Agent promotion benchmark | Pending |
 | OPS-01 | Observability and degraded modes | In progress: ingestion recovery, bounded provider failures and explicit BM25-only Ask degradation complete (T13, T20, T28, T31) |

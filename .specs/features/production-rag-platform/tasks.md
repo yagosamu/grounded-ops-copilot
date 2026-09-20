@@ -934,7 +934,7 @@ and discloses no foreign document through a forged filter or direct reference
 (`:176-182`). Adequacy A-D: PASS; all four done-when attacks have outcome assertions
 through public seams and run against real infrastructure where persistence matters.
 
-### T35: Treat corpus content as untrusted
+### T35: Treat corpus content as untrusted [x]
 
 **What**: Add prompt construction and tool policies that prevent document instructions from changing authority.
 **Where**: `src/modules/security/untrusted_content.py`
@@ -944,6 +944,21 @@ through public seams and run against real infrastructure where persistence matte
 **Tests**: adversarial prompt-injection tests.
 **Gate**: Release.
 **Commit**: `feat(security): isolate untrusted corpus instructions`
+
+**Evidence**: `make release-check` passed with 167 unit tests, 256 tests in the
+coverage run, 90.26% total coverage, 100% diff coverage and 89 release tests;
+gitleaks and floor guard were clean. The prompt envelope keeps injected JSON fields
+inside evidence data and outside trusted instructions
+(`test_untrusted_content.py:105-111`). The deny-by-default tool policy rejects both an unlisted tool and a
+cross-tenant request while preserving the configured tenant-local grant (`:123-128`).
+The adversarial Ask flow proves an injected hidden-context marker never reaches a
+delta or final response, ends in abstention, and leaves the principal tenant and
+authorized evidence unchanged (`:166-170`). Local Responses API contracts prove
+both generation modes send no tools, `tool_choice=none` and disable parallel tool
+calls (`test_openai_generation_contract.py:167-171` and
+`test_openai_generation_stream_contract.py:214-218`). Adequacy A-D: PASS; each
+done-when attack has an exact outcome assertion and the legitimate stream contract
+still passes.
 
 ### T36: Add redacted audit events
 

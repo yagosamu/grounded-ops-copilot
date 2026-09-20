@@ -32,6 +32,7 @@ from modules.retrieval.retriever import (
     QueryContext,
     RetrievalUnavailable,
 )
+from modules.security.untrusted_content import GroundedDeltaGuard
 
 
 class Retriever(Protocol):
@@ -142,19 +143,22 @@ class AskService:
         for attempt in range(self._max_generation_attempts):
             emitted_delta = False
             completed: GenerationCompleted | None = None
+            delta_guard = GroundedDeltaGuard(context.evidence)
             try:
                 for event in self._provider.stream(request):
                     if session.cancelled:
                         return None
                     if isinstance(event, GenerationDelta):
-                        emitted_delta = True
-                        yield AskEvent(
-                            {
-                                "type": "delta",
-                                "status": "unverified",
-                                "text": event.text,
-                            }
-                        )
+                        safe_delta = delta_guard.filter(event.text)
+                        if safe_delta is not None:
+                            emitted_delta = True
+                            yield AskEvent(
+                                {
+                                    "type": "delta",
+                                    "status": "unverified",
+                                    "text": safe_delta,
+                                }
+                            )
                     else:
                         completed = event
             except GenerationProviderError as error:
