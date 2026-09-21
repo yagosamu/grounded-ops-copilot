@@ -1,0 +1,228 @@
+{
+  "dataset": {
+    "bytes": 445,
+    "chunks": 2,
+    "documents": 1,
+    "name": "grounded-ops-local-capacity",
+    "questions": 2,
+    "sha256": "995743bd4e518ce929ed0f63cfe36daf601282141920506b911d70eee678769a",
+    "version": "1"
+  },
+  "first_bottleneck": "ask throughput plateau at concurrency 2",
+  "generated_at": "2026-09-21T19:44:01.540941Z",
+  "hardware": {
+    "architecture": "AMD64",
+    "cpu_model": "AMD Ryzen 7 5825U with Radeon Graphics",
+    "logical_cpus": 16,
+    "memory_gb": 15.4,
+    "operating_system": "Windows-11-10.0.26200-SP0",
+    "python_version": "3.13.2"
+  },
+  "limitations": [
+    "Local component benchmark; it does not validate production SLOs.",
+    "OpenSearch, PostgreSQL, object storage and network latency are excluded.",
+    "Ask uses a deterministic provider, so OpenAI latency and token throughput are excluded.",
+    "Ingestion covers parsing, structural chunking and hashing, not persistence or indexing.",
+    "Thread-based concurrency includes Python runtime and host scheduling effects."
+  ],
+  "measurement_scope": "local-component-capacity",
+  "plan": {
+    "concurrency": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "measured_iterations": 5000,
+    "request_timeout_seconds": 2.0,
+    "saturation_gain_threshold": 0.1,
+    "warmup_iterations": 100
+  },
+  "reproduction_command": "uv run python tests/operational/load/benchmark.py --output tests/operational/load/reports/capacity-local-v1.json --cpu-model \"AMD Ryzen 7 5825U with Radeon Graphics\" --memory-gb 15.4 --concurrency 1 2 4 8 --warmup 100 --iterations 5000 --timeout-seconds 2.0",
+  "schema_version": "capacity-report.v1",
+  "workloads": {
+    "ask": {
+      "measurements": [
+        {
+          "concurrency": 1,
+          "duration_seconds": 0.911658,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.13,
+          "latency_p95_ms": 0.288,
+          "latency_p99_ms": 0.571,
+          "max_in_flight": 1,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 5484.512
+        },
+        {
+          "concurrency": 2,
+          "duration_seconds": 1.275765,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.209,
+          "latency_p95_ms": 0.325,
+          "latency_p99_ms": 11.938,
+          "max_in_flight": 2,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 3919.218
+        },
+        {
+          "concurrency": 4,
+          "duration_seconds": 1.161261,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.164,
+          "latency_p95_ms": 0.324,
+          "latency_p99_ms": 20.206,
+          "max_in_flight": 4,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 4305.665
+        },
+        {
+          "concurrency": 8,
+          "duration_seconds": 1.152587,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.174,
+          "latency_p95_ms": 0.331,
+          "latency_p99_ms": 25.025,
+          "max_in_flight": 8,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 4338.066
+        }
+      ],
+      "saturation_concurrency": 2
+    },
+    "ingestion": {
+      "measurements": [
+        {
+          "concurrency": 1,
+          "duration_seconds": 0.929873,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.155,
+          "latency_p95_ms": 0.257,
+          "latency_p99_ms": 0.415,
+          "max_in_flight": 1,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 5377.077
+        },
+        {
+          "concurrency": 2,
+          "duration_seconds": 0.636127,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.084,
+          "latency_p95_ms": 0.192,
+          "latency_p99_ms": 0.431,
+          "max_in_flight": 2,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 7860.064
+        },
+        {
+          "concurrency": 4,
+          "duration_seconds": 0.56906,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.084,
+          "latency_p95_ms": 0.179,
+          "latency_p99_ms": 0.353,
+          "max_in_flight": 4,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 8786.42
+        },
+        {
+          "concurrency": 8,
+          "duration_seconds": 0.571359,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.083,
+          "latency_p95_ms": 0.181,
+          "latency_p99_ms": 0.344,
+          "max_in_flight": 8,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 8751.069
+        }
+      ],
+      "saturation_concurrency": 8
+    },
+    "search": {
+      "measurements": [
+        {
+          "concurrency": 1,
+          "duration_seconds": 0.857458,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.107,
+          "latency_p95_ms": 0.317,
+          "latency_p99_ms": 0.657,
+          "max_in_flight": 1,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 5831.189
+        },
+        {
+          "concurrency": 2,
+          "duration_seconds": 0.754643,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.099,
+          "latency_p95_ms": 0.222,
+          "latency_p99_ms": 0.511,
+          "max_in_flight": 2,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 6625.649
+        },
+        {
+          "concurrency": 4,
+          "duration_seconds": 0.71849,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.1,
+          "latency_p95_ms": 0.235,
+          "latency_p99_ms": 0.694,
+          "max_in_flight": 4,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 6959.035
+        },
+        {
+          "concurrency": 8,
+          "duration_seconds": 0.66332,
+          "error_categories": {},
+          "error_rate": 0.0,
+          "errors": 0,
+          "latency_p50_ms": 0.098,
+          "latency_p95_ms": 0.207,
+          "latency_p99_ms": 0.38,
+          "max_in_flight": 8,
+          "requests": 5000,
+          "successes": 5000,
+          "throughput_rps": 7537.835
+        }
+      ],
+      "saturation_concurrency": 4
+    }
+  }
+}

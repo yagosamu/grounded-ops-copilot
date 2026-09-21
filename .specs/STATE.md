@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 7 in progress; T46 is complete.
-- **Completed**: T01-T46, including safe dependency degradation and version-safe cache policy.
+- **Phase / Task**: Phase 7 in progress; T47 is complete.
+- **Completed**: T01-T47, including the reproducible local capacity baseline.
 - **In-progress**: none.
-- **Next step**: T47, establish load and capacity benchmarks before cache promotion.
+- **Next step**: T48, define SLO dashboards and alerts with failure simulations.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T46 atomic commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T47 atomic commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

@@ -1249,7 +1249,7 @@ The adversarial test replays Alice's record for Bob and proves it is rejected.
 The final full suite took 87.96 seconds and diff coverage reached 98%. Adequacy
 A-D: PASS under `CONSTRAINTS.md`; no test or assertion was removed or weakened.
 
-### T47: Establish load and capacity benchmarks
+### T47: Establish load and capacity benchmarks [x]
 
 **What**: Measure throughput, p50/p95/p99, saturation and error behavior for `Search`, `Ask` and ingestion.
 **Where**: `tests/operational/load/benchmark.py`
@@ -1259,6 +1259,17 @@ A-D: PASS under `CONSTRAINTS.md`; no test or assertion was removed or weakened.
 **Tests**: load test self-checks and result schema validation.
 **Gate**: Operational.
 **Commit**: `test(performance): establish capacity baseline`
+
+**Evidence**: the versioned local report records hardware, dataset hash, 100
+warmups, 5,000 measured requests per concurrency level, timeout, p50/p95/p99,
+throughput, errors and saturation for Search, Ask and ingestion. All 60,000 measured
+operations completed without errors. The first local plateau was Ask at concurrency
+2; the report explicitly excludes network and managed dependencies, so this is an
+application-orchestration baseline rather than a production SLO claim. Five
+self-checks validate counters, error redaction, plateau detection and the committed
+report schema. `make operational-test` passed with 5 selected tests and `make
+pre-push` passed with 345 tests, zero failures and 90.66% total coverage. Adequacy
+A-D: PASS under `CONSTRAINTS.md`; no check was skipped or weakened.
 
 ### T48: Define SLO dashboards and alerts
 
