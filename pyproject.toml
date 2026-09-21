@@ -10,6 +10,8 @@ dependencies = [
     "fastapi>=0.118.0,<1.0.0",
     "openai>=1.109,<2",
     "opensearch-py>=2.8,<3",
+    "opentelemetry-api>=1.44,<2",
+    "opentelemetry-sdk>=1.44,<2",
     "psycopg[binary]>=3.2,<4",
     "pyjwt[crypto]>=2.10,<3",
     "pyyaml>=6.0.3",
@@ -40,6 +42,7 @@ packages = [
     "src/domain",
     "src/adapters",
     "src/modules",
+    "src/observability",
     "evals",
 ]
 
@@ -71,7 +74,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["grounded_ops", "interfaces", "domain", "adapters", "modules"]
+source = ["grounded_ops", "interfaces", "domain", "adapters", "modules", "observability"]
 
 [tool.coverage.report]
 fail_under = 80

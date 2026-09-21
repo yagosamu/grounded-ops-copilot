@@ -10,6 +10,13 @@ from modules.audit.recorder import AuditOutcome, AuditRecorder
 from modules.chunking.structural import Chunk, ProvenanceSpan, StructuralChunker
 from modules.ingestion.errors import ArtifactFailure
 from modules.parsing.parser import MarkdownParser, ParserInputError
+from observability.telemetry import (
+    EntryPoint,
+    Telemetry,
+    TelemetryComponent,
+    TelemetryOperation,
+    TelemetryOutcome,
+)
 
 
 class PipelineInputError(ValueError):
@@ -125,6 +132,7 @@ class IngestionPipeline:
         index_sink: IndexPreparationSink,
         max_attempts: int,
         audit: AuditRecorder | None = None,
+        telemetry: Telemetry | None = None,
     ) -> None:
         if max_attempts <= 0:
             raise ValueError("max_attempts must be positive")
@@ -135,8 +143,19 @@ class IngestionPipeline:
         self.index_sink = index_sink
         self.max_attempts = max_attempts
         self.audit = audit or AuditRecorder.ephemeral()
+        self.telemetry = telemetry or Telemetry()
 
     def run(self, event: SourceEventView) -> PipelineOutcome:
+        with self.telemetry.operation(
+            TelemetryComponent.WORKER,
+            TelemetryOperation.INGESTION_RUN,
+            default_entry_point=EntryPoint.WORKER,
+        ) as observation:
+            outcome = self._run(event)
+            observation.outcome = _pipeline_telemetry_outcome(outcome)
+            return outcome
+
+    def _run(self, event: SourceEventView) -> PipelineOutcome:
         if event.kind == "deleted":
             document = self.repository.get_document_by_key(
                 event.source.tenant_id, event.source.id, event.canonical_key
@@ -163,6 +182,18 @@ class IngestionPipeline:
         return self._continue(event, submission, submission.job)
 
     def resume(
+        self, tenant_id: str, job_id: str, event: SourceEventView
+    ) -> PipelineOutcome:
+        with self.telemetry.operation(
+            TelemetryComponent.WORKER,
+            TelemetryOperation.INGESTION_RESUME,
+            default_entry_point=EntryPoint.WORKER,
+        ) as observation:
+            outcome = self._resume(tenant_id, job_id, event)
+            observation.outcome = _pipeline_telemetry_outcome(outcome)
+            return outcome
+
+    def _resume(
         self, tenant_id: str, job_id: str, event: SourceEventView
     ) -> PipelineOutcome:
         job = self.repository.get_job(tenant_id, job_id)
@@ -326,3 +357,11 @@ class IngestionPipeline:
             prepared,
             dlq,
         )
+
+
+def _pipeline_telemetry_outcome(outcome: PipelineOutcome) -> TelemetryOutcome:
+    if outcome.kind == JobState.FAILED.value:
+        return TelemetryOutcome.ERROR
+    if outcome.kind == JobState.RETRYING.value:
+        return TelemetryOutcome.PARTIAL
+    return TelemetryOutcome.SUCCESS

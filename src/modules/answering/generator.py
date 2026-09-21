@@ -23,6 +23,7 @@ from modules.security.untrusted_content import (
     GenerationPrompt,
     build_generation_prompt,
 )
+from observability.telemetry import Telemetry, TelemetryComponent, TelemetryOperation
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,7 @@ class OpenAIGenerationProvider:
         base_url: str | None = None,
         timeout_seconds: float = 10.0,
         max_output_tokens: int = 1200,
+        telemetry: Telemetry | None = None,
     ) -> None:
         if not model.strip() or timeout_seconds <= 0 or max_output_tokens <= 0:
             raise ValueError("invalid generation configuration")
@@ -132,8 +134,16 @@ class OpenAIGenerationProvider:
         )
         self._model = model
         self._max_output_tokens = max_output_tokens
+        self._telemetry = telemetry or Telemetry()
 
     def generate(self, request: GenerationRequest) -> GenerationResponse:
+        with self._telemetry.operation(
+            TelemetryComponent.GENERATION,
+            TelemetryOperation.GENERATION_REQUEST,
+        ):
+            return self._generate(request)
+
+    def _generate(self, request: GenerationRequest) -> GenerationResponse:
         prompt = _prompt(request)
         try:
             result = self._client.responses.parse(
@@ -171,6 +181,13 @@ class OpenAIGenerationProvider:
         return _parse_response(result)
 
     def stream(self, request: GenerationRequest) -> Iterator[GenerationStreamEvent]:
+        with self._telemetry.operation(
+            TelemetryComponent.GENERATION,
+            TelemetryOperation.GENERATION_REQUEST,
+        ):
+            yield from self._stream(request)
+
+    def _stream(self, request: GenerationRequest) -> Iterator[GenerationStreamEvent]:
         prompt = _prompt(request)
         try:
             with self._client.responses.stream(

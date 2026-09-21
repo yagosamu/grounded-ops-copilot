@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 6 complete; T43 is complete and T37 closed Phase 5.
-- **Completed**: T01-T43, including the benchmark-backed opt-in-only agent routing decision.
+- **Phase / Task**: Phase 7 in progress; T44 is complete.
+- **Completed**: T01-T44, including correlated telemetry with redaction and W3C propagation.
 - **In-progress**: none.
-- **Next step**: T44, instrument correlated telemetry across API, worker, retrieval, generation and agent flows.
+- **Next step**: T45, implement safe degraded modes for external dependencies.
 - **Blockers**: none.
-- **Uncommitted files**: T43 implementation and evidence pending its atomic commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

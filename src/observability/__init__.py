@@ -1,0 +1,1 @@
+"""Production-safe telemetry primitives."""

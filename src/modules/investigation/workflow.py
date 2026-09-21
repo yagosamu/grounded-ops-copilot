@@ -22,6 +22,12 @@ from modules.investigation.tools import (
 )
 from modules.policy.authorizer import Principal
 from modules.retrieval.retriever import Evidence, EvidenceSet
+from observability.telemetry import (
+    Telemetry,
+    TelemetryComponent,
+    TelemetryOperation,
+    TelemetryOutcome,
+)
 
 T = TypeVar("T")
 
@@ -311,6 +317,7 @@ class InvestigationWorkflow:
         reporter: Reporter,
         *,
         clock: Callable[[], datetime] | None = None,
+        telemetry: Telemetry | None = None,
     ) -> None:
         self._store = store
         self._planner = planner
@@ -318,6 +325,7 @@ class InvestigationWorkflow:
         self._verifier = verifier
         self._reporter = reporter
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._telemetry = telemetry or Telemetry()
 
     def start(
         self, task: InvestigationTask, budget: InvestigationBudget
@@ -341,12 +349,30 @@ class InvestigationWorkflow:
         return state
 
     def run(self, investigation_id: str) -> InvestigationState:
+        with self._telemetry.operation(
+            TelemetryComponent.AGENT,
+            TelemetryOperation.INVESTIGATION_RUN,
+        ) as observation:
+            state = self._run(investigation_id)
+            observation.outcome = _investigation_telemetry_outcome(state.status)
+            return state
+
+    def _run(self, investigation_id: str) -> InvestigationState:
         state = self.get(investigation_id)
         while not state.terminal:
             state = self.advance(investigation_id)
         return state
 
     def advance(self, investigation_id: str) -> InvestigationState:
+        with self._telemetry.operation(
+            TelemetryComponent.AGENT,
+            TelemetryOperation.INVESTIGATION_STEP,
+        ) as observation:
+            state = self._advance(investigation_id)
+            observation.outcome = _investigation_telemetry_outcome(state.status)
+            return state
+
+    def _advance(self, investigation_id: str) -> InvestigationState:
         current = self.get(investigation_id)
         if current.terminal:
             return current
@@ -623,6 +649,18 @@ class InvestigationWorkflow:
 def _validate_usage(tokens_used: int, cost_microusd: int) -> None:
     if tokens_used < 0 or cost_microusd < 0:
         raise ValueError("usage cannot be negative")
+
+
+def _investigation_telemetry_outcome(
+    status: InvestigationStatus,
+) -> TelemetryOutcome:
+    if status is InvestigationStatus.FAILED:
+        return TelemetryOutcome.ERROR
+    if status is InvestigationStatus.PARTIAL:
+        return TelemetryOutcome.PARTIAL
+    if status is InvestigationStatus.CANCELLED:
+        return TelemetryOutcome.CANCELLED
+    return TelemetryOutcome.SUCCESS
 
 
 def _duration_ms(started: datetime, finished: datetime) -> int:

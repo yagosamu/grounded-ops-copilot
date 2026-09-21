@@ -7,6 +7,7 @@ from interfaces.http.auth import PrincipalDependency
 from interfaces.http.health import create_health_router
 from interfaces.http.investigations import InvestigationAPI, create_investigation_router
 from interfaces.http.search import Retriever, create_search_router
+from observability.telemetry import CorrelationMiddleware, Telemetry
 
 
 def create_app(
@@ -14,9 +15,11 @@ def create_app(
     ask_executor: AskExecutor | None = None,
     investigation_lifecycle: InvestigationAPI | None = None,
     authenticator: PrincipalDependency | None = None,
+    telemetry: Telemetry | None = None,
 ) -> FastAPI:
     """Create the HTTP application without connecting to infrastructure."""
     app = FastAPI(title="GroundedOps")
+    app.add_middleware(CorrelationMiddleware, telemetry=telemetry or Telemetry())
     app.include_router(create_health_router({}))
     protected = (retriever, ask_executor, investigation_lifecycle)
     if any(item is not None for item in protected) and authenticator is None:

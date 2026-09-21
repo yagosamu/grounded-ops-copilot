@@ -1182,7 +1182,7 @@ and the floor guard was clean.
 
 **Outcome**: Production behavior is measurable, bounded and diagnosable under dependency and traffic failures.
 
-### T44: Instrument correlated telemetry
+### T44: Instrument correlated telemetry [x]
 
 **What**: Emit structured logs, metrics and traces across API, worker, retrieval, generation and agent flows.
 **Where**: `src/observability/telemetry.py`
@@ -1192,6 +1192,17 @@ and the floor guard was clean.
 **Tests**: telemetry unit and integration tests.
 **Gate**: Full.
 **Commit**: `feat(observability): instrument end-to-end telemetry`
+
+**Evidence**: `make test` passed with 315 tests, zero failures and 90.13% total
+coverage. `tests/unit/observability/test_telemetry.py` proves allowlisted JSON
+events, bounded metric labels, normalized external correlation values and absence
+of corpus text, tokens, secrets and exception messages. The integration suite in
+`tests/integration/test_telemetry_propagation.py` proves one W3C trace and
+correlation ID across API, worker, retrieval, generation and agent spans, plus
+HTTP error classification. `Telemetry` keeps logs, metrics and traces on the same
+operation envelope while preserving the existing module boundaries. Adequacy A-D:
+PASS; assertions inspect emitted public signals and redaction behavior, not only
+collaborator calls. The full pre-push result is recorded in the commit handoff.
 
 ### T45: Implement safe degraded modes
 

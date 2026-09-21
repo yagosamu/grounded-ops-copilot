@@ -7,6 +7,11 @@ from typing import Protocol
 from adapters.opensearch.search import SearchRequest, SearchResult
 from modules.policy.authorizer import AuthorizationReason, Principal
 from modules.policy.enforcement import DocumentRef, PolicyEnforcer
+from observability.telemetry import (
+    Telemetry,
+    TelemetryComponent,
+    TelemetryOperation,
+)
 
 
 class SearchAdapter(Protocol):
@@ -70,11 +75,24 @@ class EvidenceSet:
 
 
 class BM25Retriever:
-    def __init__(self, adapter: SearchAdapter, enforcer: PolicyEnforcer) -> None:
+    def __init__(
+        self,
+        adapter: SearchAdapter,
+        enforcer: PolicyEnforcer,
+        telemetry: Telemetry | None = None,
+    ) -> None:
         self.adapter = adapter
         self.enforcer = enforcer
+        self.telemetry = telemetry or Telemetry()
 
     def retrieve(self, context: QueryContext) -> EvidenceSet:
+        with self.telemetry.operation(
+            TelemetryComponent.RETRIEVAL,
+            TelemetryOperation.RETRIEVAL_QUERY,
+        ):
+            return self._retrieve(context)
+
+    def _retrieve(self, context: QueryContext) -> EvidenceSet:
         scope = self.enforcer.search_scope(context.principal)
         if scope is None:
             return EvidenceSet((), "bm25", 0, 0)
