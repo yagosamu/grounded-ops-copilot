@@ -1,0 +1,12 @@
+schema_version: branch-protection.v1
+branch: main
+repository_enforcement: pending
+required_status_checks:
+  strict: true
+  checks:
+    - release / required
+pull_request_reviews:
+  required_approvals: 1
+  dismiss_stale_reviews: true
+allow_force_pushes: false
+allow_deletions: false

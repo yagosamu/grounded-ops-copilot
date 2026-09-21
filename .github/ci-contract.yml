@@ -1,0 +1,32 @@
+schema_version: ci-contract.v1
+required_status: release / required
+gates:
+  lint:
+    job: release
+    step: release-check
+  types:
+    job: release
+    step: release-check
+  tests:
+    job: release
+    step: release-check
+  evals:
+    job: release
+    step: release-check
+  migrations:
+    job: release
+    step: release-check
+  secrets:
+    job: security
+    step: secrets
+  security:
+    job: security
+    step: static-analysis
+reports:
+  - evals/agentic/reports/agentic-v1.json
+  - evals/answering/reports/answering-v1.json
+  - evals/retrieval/reports/bm25-v1.json
+  - evals/retrieval/reports/candidates-v1.json
+  - evals/retrieval/reports/chunking-v1.json
+  - ops/observability/reports/alert-simulation-v1.json
+  - tests/operational/load/reports/capacity-local-v1.json

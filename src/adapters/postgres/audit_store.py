@@ -1,7 +1,8 @@
 """PostgreSQL adapter for append-only redacted audit decisions."""
 
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection, bindparam, column, select, table, text
 from sqlalchemy.engine import RowMapping
+from sqlalchemy.sql.elements import ColumnElement
 
 from modules.audit.recorder import (
     AuditAction,
@@ -10,6 +11,21 @@ from modules.audit.recorder import (
     AuditOutcome,
     AuditReason,
     StoredAuditQuery,
+)
+
+AUDIT_EVENTS = table(
+    "audit_events",
+    column("event_id"),
+    column("occurred_at"),
+    column("category"),
+    column("action"),
+    column("outcome"),
+    column("tenant_ref"),
+    column("actor_ref"),
+    column("resource_ref"),
+    column("correlation_ref"),
+    column("reason"),
+    column("sequence_id"),
 )
 
 
@@ -45,30 +61,39 @@ class PostgresAuditStore:
         )
 
     def query(self, query: StoredAuditQuery) -> tuple[AuditEvent, ...]:
-        filters = ["tenant_ref = :tenant_ref"]
+        filters: list[ColumnElement[bool]] = [
+            AUDIT_EVENTS.c.tenant_ref == bindparam("tenant_ref")
+        ]
         parameters: dict[str, str | int] = {
             "tenant_ref": query.tenant_ref,
             "limit": query.limit,
         }
-        for column, value in (
-            ("category", query.category.value if query.category else None),
-            ("outcome", query.outcome.value if query.outcome else None),
-            ("actor_ref", query.actor_ref),
-            ("resource_ref", query.resource_ref),
-            ("correlation_ref", query.correlation_ref),
+        for filter_column, value in (
+            (AUDIT_EVENTS.c.category, query.category.value if query.category else None),
+            (AUDIT_EVENTS.c.outcome, query.outcome.value if query.outcome else None),
+            (AUDIT_EVENTS.c.actor_ref, query.actor_ref),
+            (AUDIT_EVENTS.c.resource_ref, query.resource_ref),
+            (AUDIT_EVENTS.c.correlation_ref, query.correlation_ref),
         ):
             if value is not None:
-                filters.append(f"{column} = :{column}")
-                parameters[column] = value
+                filters.append(filter_column == bindparam(filter_column.name))
+                parameters[filter_column.name] = value
         rows = self._connection.execute(
-            text(f"""
-                SELECT event_id, occurred_at, category, action, outcome, tenant_ref,
-                       actor_ref, resource_ref, correlation_ref, reason
-                FROM audit_events
-                WHERE {" AND ".join(filters)}
-                ORDER BY occurred_at, sequence_id
-                LIMIT :limit
-            """),
+            select(
+                AUDIT_EVENTS.c.event_id,
+                AUDIT_EVENTS.c.occurred_at,
+                AUDIT_EVENTS.c.category,
+                AUDIT_EVENTS.c.action,
+                AUDIT_EVENTS.c.outcome,
+                AUDIT_EVENTS.c.tenant_ref,
+                AUDIT_EVENTS.c.actor_ref,
+                AUDIT_EVENTS.c.resource_ref,
+                AUDIT_EVENTS.c.correlation_ref,
+                AUDIT_EVENTS.c.reason,
+            )
+            .where(*filters)
+            .order_by(AUDIT_EVENTS.c.occurred_at, AUDIT_EVENTS.c.sequence_id)
+            .limit(bindparam("limit")),
             parameters,
         ).mappings()
         return tuple(self._event(row) for row in rows)

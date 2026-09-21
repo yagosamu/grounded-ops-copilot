@@ -1,0 +1,163 @@
+name: Release quality gates
+
+'on':
+  pull_request:
+  push:
+    branches:
+      - main
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: release / quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the full repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: 0.12.17
+          python-version: '3.13'
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked --all-groups
+      - name: Install pinned Gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.0
+          GITLEAKS_SHA256: 79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" \
+            --output "/tmp/${archive}"
+          echo "${GITLEAKS_SHA256}  /tmp/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "/tmp/${archive}" --directory /tmp gitleaks
+          sudo install --mode 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Validate ephemeral service definitions
+        id: service-definitions
+        run: docker compose -f tests/integration/compose.yml config --quiet
+        env:
+          TEST_POSTGRES_PASSWORD: ci-contract-only
+          TEST_MINIO_USER: ci-contract-only
+          TEST_MINIO_PASSWORD: ci-contract-only-password
+      - name: Run the canonical release gate
+        id: release-check
+        run: make release-check BASE=origin/main
+      - name: Validate CI and branch-protection contracts
+        id: ci-contract
+        run: uv run python scripts/ci_contract.py validate
+      - name: Bind reports to this revision
+        id: evidence
+        run: >-
+          uv run python scripts/ci_contract.py evidence
+          --revision "${GITHUB_SHA}"
+          --output release-evidence/manifest.json
+      - name: Upload immutable release evidence
+        id: release-artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-reports-${{ github.sha }}
+          path: |
+            release-evidence/manifest.json
+            evals/**/reports/*.json
+            ops/observability/reports/*.json
+            tests/operational/load/reports/*.json
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
+
+  security:
+    name: release / security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the full repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: 0.12.17
+          python-version: '3.13'
+          enable-cache: true
+      - name: Install Go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
+        with:
+          go-version: '1.25.1'
+          cache: false
+      - name: Install pinned security scanners
+        env:
+          GITLEAKS_VERSION: 8.30.0
+          GITLEAKS_SHA256: 79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}" \
+            --output "/tmp/${archive}"
+          echo "${GITLEAKS_SHA256}  /tmp/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "/tmp/${archive}" --directory /tmp gitleaks
+          sudo install --mode 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.6.0
+          uv tool install semgrep==1.177.0
+          mkdir -p security-reports
+      - name: Detect committed secrets
+        id: secrets
+        run: >-
+          gitleaks detect --redact --no-banner --source .
+          --report-format json
+          --report-path security-reports/gitleaks.json
+      - name: Scan Python code for high-severity findings
+        id: static-analysis
+        run: >-
+          semgrep scan --config p/python --severity ERROR --error
+          --json-output security-reports/semgrep.json .
+      - name: Scan locked dependencies for known vulnerabilities
+        id: dependencies
+        run: |
+          set +e
+          osv-scanner scan source --recursive --format=sarif . \
+            > security-reports/osv.sarif
+          scanner_status=$?
+          set -e
+          test "${scanner_status}" -le 1
+          uv run python scripts/security_policy.py \
+            security-reports/osv.sarif --minimum-score 7.0
+      - name: Upload immutable security evidence
+        id: security-artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: security-reports-${{ github.sha }}
+          path: security-reports/*
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
+
+  required:
+    name: release / required
+    if: always()
+    needs:
+      - release
+      - security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every release job
+        id: aggregate
+        env:
+          RELEASE_RESULT: ${{ needs.release.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+        run: |
+          test "${RELEASE_RESULT}" = success
+          test "${SECURITY_RESULT}" = success

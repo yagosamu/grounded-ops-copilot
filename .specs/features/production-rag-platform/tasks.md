@@ -1305,7 +1305,7 @@ immutable evidence without skipped or weakened tests.
 
 **Outcome**: A release can be built, deployed, rolled back, restored and demonstrated with production evidence.
 
-### T49: Build the continuous-integration pipeline
+### T49: Build the continuous-integration pipeline [x]
 
 **What**: Run `make release-check` with service dependencies, immutable reports and branch protection status.
 **Where**: `.github/workflows/ci.yml`
@@ -1315,6 +1315,22 @@ immutable evidence without skipped or weakened tests.
 **Tests**: CI discrimination matrix.
 **Gate**: Release.
 **Commit**: `ci(github): enforce release quality gates`
+
+**Evidence**: `.github/workflows/ci.yml` runs the canonical release gate against
+ephemeral PostgreSQL, OpenSearch and MinIO definitions, then runs pinned Gitleaks,
+Semgrep and OSV Scanner versions in a separate least-privilege job. All actions are
+pinned to full commit SHAs and `release / required` fails unless both upstream jobs
+succeed. The checked-in branch-protection contract names that single stable status
+and explicitly records that repository-side enforcement is still pending. Release
+reports are uploaded with the commit SHA in the immutable artifact name and a
+manifest binds seven reports to their SHA-256 hashes. The 14-test discrimination
+suite makes each of lint, types, tests, evals, migrations, secrets and security fail
+the aggregate independently, and detects modified evidence. Actionlint accepted the
+workflow, Semgrep 1.177.0 reported zero blocking findings, and OSV Scanner 2.6.0
+found no dependency at the blocking CVSS >= 7 threshold. `make release-check`
+passed with 364 tests, 90.67% total coverage, 100% diff coverage, zero secrets and
+119 release-marker tests. Adequacy A-D: PASS under `CONSTRAINTS.md`; no gate is
+non-blocking and no scanner rule was suppressed.
 
 ### T50: Build immutable deployment artifacts
 

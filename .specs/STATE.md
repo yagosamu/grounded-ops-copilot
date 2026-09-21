@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 7 complete; T48 is complete.
-- **Completed**: T01-T48, including SLOs, dashboard queries, runbooks and alert simulations.
+- **Phase / Task**: Phase 8 in progress; T49 is complete.
+- **Completed**: T01-T49, including fail-closed GitHub CI, security scans and immutable release evidence.
 - **In-progress**: none.
-- **Next step**: T49, build the continuous-integration pipeline for release evidence.
+- **Next step**: T50, build hardened and immutable API and worker images.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T48 atomic commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T49 atomic commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

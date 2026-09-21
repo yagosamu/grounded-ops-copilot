@@ -155,7 +155,7 @@ The acceptance criteria below define the testable behavior of each story.
 | AGT-02 | Agent promotion benchmark | Complete: frozen v1 evidence and ADR-002 keep Investigate disabled because its 2.7x Ask cost exceeds the 2.5x threshold (T42-T43) |
 | OPS-01 | Observability and degraded modes | Complete: correlated telemetry, bounded failure policies, authorization-aware caching, reproducible capacity evidence and simulated SLO alerts cover safe operation and explicit Pilot-readiness gaps (T13, T20, T28, T31, T36-T37, T44-T48) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |
-| REL-01 | Pre-push and release gates | In progress: local gates and checker configuration complete (T02-T03) |
+| REL-01 | Pre-push and release gates | In progress: local gates plus fail-closed GitHub CI, security scans, immutable report evidence and a branch-protection contract are complete (T02-T03, T49) |
 
 ## Success Criteria
 
