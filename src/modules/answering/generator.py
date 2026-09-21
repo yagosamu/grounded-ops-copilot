@@ -19,6 +19,12 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from domain.answering import AnswerUsage, Citation, Claim, GroundedAnswer, Question
 from domain.answering import VerificationStatus as AnswerStatus
 from modules.answering.context_packer import PackedContext
+from modules.resilience.policies import (
+    CircuitBreaker,
+    CircuitOpenError,
+    validate_attempts,
+    validate_timeout,
+)
 from modules.security.untrusted_content import (
     GenerationPrompt,
     build_generation_prompt,
@@ -124,8 +130,9 @@ class OpenAIGenerationProvider:
         max_output_tokens: int = 1200,
         telemetry: Telemetry | None = None,
     ) -> None:
-        if not model.strip() or timeout_seconds <= 0 or max_output_tokens <= 0:
+        if not model.strip() or max_output_tokens <= 0:
             raise ValueError("invalid generation configuration")
+        validate_timeout(timeout_seconds, maximum_seconds=10.0)
         self._client = OpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -245,7 +252,9 @@ class AnswerGenerator:
         *,
         max_attempts: int = 2,
         retry_delays: tuple[float, ...] = (0.05,),
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
+        validate_attempts(max_attempts, maximum_attempts=2)
         if max_attempts <= 0 or len(retry_delays) < max_attempts - 1:
             raise ValueError("invalid generation retry policy")
         if any(delay < 0 for delay in retry_delays):
@@ -253,6 +262,9 @@ class AnswerGenerator:
         self._provider = provider
         self._max_attempts = max_attempts
         self._retry_delays = retry_delays
+        self._circuit_breaker = circuit_breaker or CircuitBreaker(
+            failure_threshold=max_attempts
+        )
 
     def generate(self, question: Question, context: PackedContext) -> GroundedAnswer:
         response = self._request(GenerationRequest(question, context))
@@ -261,7 +273,12 @@ class AnswerGenerator:
     def _request(self, request: GenerationRequest) -> GenerationResponse:
         for attempt in range(self._max_attempts):
             try:
-                return self._provider.generate(request)
+                with self._circuit_breaker.attempt():
+                    return self._provider.generate(request)
+            except CircuitOpenError as error:
+                raise GenerationProviderError(
+                    GenerationFailure.UNAVAILABLE, retryable=True
+                ) from error
             except GenerationProviderError as error:
                 if not error.retryable or attempt + 1 == self._max_attempts:
                     raise GenerationProviderError(

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+from contextlib import AbstractContextManager
+from typing import Any
 
 import pytest
 from opentelemetry.sdk.metrics import MeterProvider
@@ -138,3 +140,53 @@ def test_carrier_requires_an_explicit_correlation_context() -> None:
 
     with pytest.raises(RuntimeError, match="telemetry context is not bound"):
         telemetry.inject_carrier()
+
+
+class FailingLogger(logging.Logger):
+    def log(
+        self,
+        level: int,
+        msg: object,
+        *args: object,
+        **kwargs: object,
+    ) -> None:
+        raise RuntimeError("logger unavailable")
+
+
+class FailingTracer:
+    def start_as_current_span(
+        self, name: str, *args: object, **kwargs: object
+    ) -> AbstractContextManager[Any]:
+        raise RuntimeError("tracer unavailable")
+
+
+class FailingMeter:
+    def create_counter(self, name: str, *args: object, **kwargs: object) -> Any:
+        raise RuntimeError("metrics unavailable")
+
+    def create_histogram(self, name: str, *args: object, **kwargs: object) -> Any:
+        raise RuntimeError("metrics unavailable")
+
+
+def test_telemetry_backend_failure_never_replaces_business_outcome() -> None:
+    telemetry = Telemetry(
+        logger=FailingLogger("failing"),
+        tracer=FailingTracer(),
+        meter=FailingMeter(),
+    )
+    completed = False
+
+    with telemetry.operation(
+        TelemetryComponent.RETRIEVAL,
+        TelemetryOperation.RETRIEVAL_QUERY,
+    ):
+        completed = True
+
+    assert completed is True
+
+    with pytest.raises(ValueError, match="business failure"):
+        with telemetry.operation(
+            TelemetryComponent.RETRIEVAL,
+            TelemetryOperation.RETRIEVAL_QUERY,
+        ):
+            raise ValueError("business failure")

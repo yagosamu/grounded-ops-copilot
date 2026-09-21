@@ -125,7 +125,7 @@ def s3_client() -> Iterator[S3Client]:
             aws_secret_access_key=credential,
             region_name="us-east-1",
             config=Config(
-                connect_timeout=2, read_timeout=5, retries={"total_max_attempts": 2}
+                connect_timeout=2, read_timeout=5, retries={"total_max_attempts": 1}
             ),
         )
         yield client

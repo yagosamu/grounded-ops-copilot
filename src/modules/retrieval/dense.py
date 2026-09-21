@@ -3,7 +3,7 @@
 from typing import Protocol
 
 from adapters.opensearch.dense import DenseSearchRequest, DenseSearchResult
-from modules.embeddings.embedder import EmbeddingRecord
+from modules.embeddings.embedder import EmbeddingProviderError, EmbeddingRecord
 from modules.policy.enforcement import DocumentRef, PolicyEnforcer
 from modules.retrieval.retriever import (
     Evidence,
@@ -60,6 +60,11 @@ class DenseRetriever:
                 for hit in result.hits
             )
             authorized = self._enforcer.authorize_reads(context.principal, references)
+        except EmbeddingProviderError as error:
+            raise RetrievalUnavailable(
+                "retrieval unavailable",
+                degradation_reason="embedding_provider_unavailable",
+            ) from error
         except Exception as error:
             raise RetrievalUnavailable("retrieval unavailable") from error
         evidence: list[Evidence] = []

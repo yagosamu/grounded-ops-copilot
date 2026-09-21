@@ -32,8 +32,8 @@ class HybridRetriever:
         self._rrf_k = rrf_k
 
     def retrieve(self, context: QueryContext) -> EvidenceSet:
-        lexical = self._retrieve(self._lexical, context)
-        dense = self._retrieve(self._dense, context)
+        lexical, _ = self._retrieve(self._lexical, context)
+        dense, dense_failure = self._retrieve(self._dense, context)
         if lexical is None and dense is None:
             raise RetrievalUnavailable("retrieval unavailable")
 
@@ -84,11 +84,25 @@ class HybridRetriever:
             result.took_ms for result in (lexical, dense) if result is not None
         )
         limited = tuple(authorized[: context.limit])
-        return EvidenceSet(limited, strategy, len(limited), took_ms)
+        degradation_reason = (
+            dense_failure
+            if dense is None and dense_failure == "embedding_provider_unavailable"
+            else None
+        )
+        return EvidenceSet(
+            limited,
+            strategy,
+            len(limited),
+            took_ms,
+            degraded=degradation_reason is not None,
+            degradation_reason=degradation_reason,
+        )
 
     @staticmethod
-    def _retrieve(retriever: Retriever, context: QueryContext) -> EvidenceSet | None:
+    def _retrieve(
+        retriever: Retriever, context: QueryContext
+    ) -> tuple[EvidenceSet | None, str | None]:
         try:
-            return retriever.retrieve(context)
-        except RetrievalUnavailable:
-            return None
+            return retriever.retrieve(context), None
+        except RetrievalUnavailable as error:
+            return None, error.degradation_reason

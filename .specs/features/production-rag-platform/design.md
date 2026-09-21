@@ -83,11 +83,19 @@ Invalid transitions fail explicitly and produce an audit event.
 | --- | --- | --- |
 | Embedding provider unavailable | Skip dense leg when policy allows | BM25-only result marked degraded |
 | Generation provider unavailable | Return evidence without generated synthesis | Search remains available |
+| Object store unavailable | Use one transport attempt; let the ingestion job own bounded retries and open the circuit after repeated failures | Source becomes retrying or failed/DLQ without request amplification |
+| Telemetry backend unavailable | Drop the failed signal and preserve the business result or original business error | Request continues; telemetry backend health is monitored independently |
 | OpenSearch unavailable | Fail retrieval readiness; do not fabricate an answer | Explicit temporary failure |
 | Parsing failure | Bounded retry, then DLQ | Source status identifies failed document |
 | Partial index build | Keep old alias active | No half-built corpus served |
 | Citation verification failure | Mark answer unverified or abstain | Unsupported answer is not presented as verified |
 | Agent tool timeout | Record failure and continue only if remaining evidence is sufficient | Partial report includes limitation |
+
+Embedding and generation SDK retries remain disabled. Their application services
+own the small retry budget. Circuit breakers count those attempts, reject calls
+during the recovery window and allow one half-open probe. This keeps timeout,
+retry and fallback behavior explicit at one layer instead of multiplying attempts
+across SDKs, services and jobs.
 
 ## Deployment Shape
 

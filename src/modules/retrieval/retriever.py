@@ -21,6 +21,15 @@ class SearchAdapter(Protocol):
 class RetrievalUnavailable(RuntimeError):
     """The search dependency could not return evidence safely."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        degradation_reason: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.degradation_reason = degradation_reason
+
 
 @dataclass(frozen=True)
 class QueryContext:

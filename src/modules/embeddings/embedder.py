@@ -13,6 +13,13 @@ from openai import (
     RateLimitError,
 )
 
+from modules.resilience.policies import (
+    CircuitBreaker,
+    CircuitOpenError,
+    validate_attempts,
+    validate_timeout,
+)
+
 
 @dataclass(frozen=True)
 class EmbeddingRequest:
@@ -61,6 +68,7 @@ class OpenAIEmbeddingProvider:
         base_url: str | None = None,
         timeout_seconds: float = 10.0,
     ) -> None:
+        validate_timeout(timeout_seconds, maximum_seconds=10.0)
         self._client = OpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -102,11 +110,13 @@ class Embedder:
         batch_size: int = 64,
         max_attempts: int = 2,
         retry_delays: tuple[float, ...] = (0.05,),
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         if not model or not model_version or dimensions <= 0:
             raise ValueError("invalid embedding configuration")
         if batch_size <= 0 or max_attempts <= 0:
             raise ValueError("invalid embedding bounds")
+        validate_attempts(max_attempts, maximum_attempts=3)
         if len(retry_delays) < max_attempts - 1 or any(
             delay < 0 for delay in retry_delays
         ):
@@ -118,6 +128,9 @@ class Embedder:
         self._batch_size = batch_size
         self._max_attempts = max_attempts
         self._retry_delays = retry_delays
+        self._circuit_breaker = circuit_breaker or CircuitBreaker(
+            failure_threshold=max_attempts
+        )
 
     def embed_query(self, query: str) -> EmbeddingRecord:
         return self._embed((query,), "query")[0]
@@ -161,7 +174,12 @@ class Embedder:
     def _request(self, request: EmbeddingRequest) -> EmbeddingResponse:
         for attempt in range(self._max_attempts):
             try:
-                return self._provider.embed(request)
+                with self._circuit_breaker.attempt():
+                    return self._provider.embed(request)
+            except CircuitOpenError as error:
+                raise EmbeddingProviderError(
+                    "embedding provider unavailable", retryable=True
+                ) from error
             except EmbeddingProviderError as error:
                 if not error.retryable or attempt + 1 == self._max_attempts:
                     raise EmbeddingProviderError(

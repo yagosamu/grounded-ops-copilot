@@ -219,7 +219,38 @@ def test_streams_abstention_without_calling_generation_for_empty_evidence(
 
 
 @pytest.mark.api
-def test_streams_timeout_as_provider_failure_not_abstention(auth_context) -> None:
+def test_streams_invalid_generation_as_failure_not_degraded_mode(auth_context) -> None:
+    timeout = GenerationProviderError(GenerationFailure.TIMEOUT, retryable=True)
+    provider = FakeStreamingProvider([timeout, timeout])
+    provider.outcomes[-1] = GenerationProviderError(
+        GenerationFailure.MALFORMED_OUTPUT,
+        retryable=False,
+    )
+    service, _ = ask_service(EvidenceSet((evidence(),), "bm25", 1, 2), provider)
+
+    response = client(service, auth_context.authenticator).post(
+        "/v1/ask",
+        json={"question": "Will this time out?"},
+        headers=auth_context.headers(),
+    )
+    payloads = events(response.text)
+
+    assert response.status_code == 200
+    assert payloads[-1]["status"] == "failed"
+    assert payloads[-1]["answer"] is None
+    assert payloads[-1]["claims"] == []
+    assert payloads[-1]["sources"] == []
+    assert payloads[-1]["error"] == {
+        "code": "generation_malformed_output",
+        "message": "generation temporarily unavailable",
+    }
+    assert payloads[-1]["abstention"] is None
+    assert payloads[-1]["degraded"] == {"active": False, "mode": None, "reason": None}
+    assert len(provider.requests) == 2
+
+
+@pytest.mark.api
+def test_returns_authorized_evidence_when_generation_times_out(auth_context) -> None:
     timeout = GenerationProviderError(GenerationFailure.TIMEOUT, retryable=True)
     provider = FakeStreamingProvider([timeout, timeout])
     service, _ = ask_service(EvidenceSet((evidence(),), "bm25", 1, 2), provider)
@@ -232,12 +263,28 @@ def test_streams_timeout_as_provider_failure_not_abstention(auth_context) -> Non
     payloads = events(response.text)
 
     assert response.status_code == 200
-    assert payloads[-1]["status"] == "failed"
+    assert payloads[-1]["status"] == "degraded"
+    assert payloads[-1]["answer"] is None
+    assert payloads[-1]["claims"] == []
+    assert payloads[-1]["sources"] == [
+        {
+            "evidence_id": "chunk-1",
+            "source_id": "source-1",
+            "document_id": "document-1",
+            "document_version_id": "version-2",
+            "span": [5, 45],
+        }
+    ]
     assert payloads[-1]["error"] == {
         "code": "generation_timeout",
         "message": "generation temporarily unavailable",
     }
     assert payloads[-1]["abstention"] is None
+    assert payloads[-1]["degraded"] == {
+        "active": True,
+        "mode": "evidence_only",
+        "reason": "generation_timeout",
+    }
     assert len(provider.requests) == 2
 
 

@@ -33,6 +33,11 @@ from modules.policy.quotas import (
     QuotaOperation,
     QuotaOutcome,
 )
+from modules.resilience.policies import (
+    CircuitBreaker,
+    CircuitOpenError,
+    validate_attempts,
+)
 from modules.retrieval.retriever import (
     EvidenceSet,
     QueryContext,
@@ -79,7 +84,9 @@ class AskService:
         *,
         max_generation_attempts: int = 2,
         retry_delays: tuple[float, ...] = (0.05,),
+        generation_circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
+        validate_attempts(max_generation_attempts, maximum_attempts=2)
         if (
             max_generation_attempts <= 0
             or len(retry_delays) < max_generation_attempts - 1
@@ -93,6 +100,9 @@ class AskService:
         self._abstention = abstention
         self._max_generation_attempts = max_generation_attempts
         self._retry_delays = retry_delays
+        self._generation_circuit_breaker = generation_circuit_breaker or CircuitBreaker(
+            failure_threshold=max_generation_attempts
+        )
 
     def start(self, question: Question, principal: Principal) -> AskSession:
         session: AskSession
@@ -127,7 +137,7 @@ class AskService:
             )
             return
         yield AskEvent({"type": "status", "status": "generating"})
-        completed = yield from self._generate(session, question, context)
+        completed = yield from self._generate(session, question, context, evidence_set)
         if completed is None:
             return
         try:
@@ -143,7 +153,11 @@ class AskService:
         yield _final_answer(verification.answer, evidence_set)
 
     def _generate(
-        self, session: AskSession, question: Question, context: PackedContext
+        self,
+        session: AskSession,
+        question: Question,
+        context: PackedContext,
+        evidence_set: EvidenceSet,
     ) -> Generator[AskEvent, None, GenerationCompleted | None]:
         request = GenerationRequest(question, context)
         for attempt in range(self._max_generation_attempts):
@@ -151,22 +165,32 @@ class AskService:
             completed: GenerationCompleted | None = None
             delta_guard = GroundedDeltaGuard(context.evidence)
             try:
-                for event in self._provider.stream(request):
-                    if session.cancelled:
-                        return None
-                    if isinstance(event, GenerationDelta):
-                        safe_delta = delta_guard.filter(event.text)
-                        if safe_delta is not None:
-                            emitted_delta = True
-                            yield AskEvent(
-                                {
-                                    "type": "delta",
-                                    "status": "unverified",
-                                    "text": safe_delta,
-                                }
-                            )
-                    else:
-                        completed = event
+                with self._generation_circuit_breaker.attempt():
+                    for event in self._provider.stream(request):
+                        if session.cancelled:
+                            return None
+                        if isinstance(event, GenerationDelta):
+                            safe_delta = delta_guard.filter(event.text)
+                            if safe_delta is not None:
+                                emitted_delta = True
+                                yield AskEvent(
+                                    {
+                                        "type": "delta",
+                                        "status": "unverified",
+                                        "text": safe_delta,
+                                    }
+                                )
+                        else:
+                            completed = event
+            except CircuitOpenError:
+                yield _generation_fallback(
+                    GenerationProviderError(
+                        GenerationFailure.UNAVAILABLE,
+                        retryable=True,
+                    ),
+                    evidence_set,
+                )
+                return None
             except GenerationProviderError as error:
                 can_retry = (
                     error.retryable
@@ -176,7 +200,13 @@ class AskService:
                 if can_retry:
                     sleep(self._retry_delays[attempt])
                     continue
-                yield _generation_failure(error)
+                if error.failure in (
+                    GenerationFailure.INCOMPLETE,
+                    GenerationFailure.MALFORMED_OUTPUT,
+                ):
+                    yield _generation_failure(error)
+                else:
+                    yield _generation_fallback(error, evidence_set)
                 return None
             if completed is None:
                 yield _generation_failure(
@@ -311,6 +341,46 @@ def _failure(code: str, message: str) -> AskEvent:
 def _generation_failure(error: GenerationProviderError) -> AskEvent:
     code = f"generation_{error.failure.value}"
     return _failure(code, "generation temporarily unavailable")
+
+
+def _generation_fallback(
+    error: GenerationProviderError,
+    evidence_set: EvidenceSet,
+) -> AskEvent:
+    code = f"generation_{error.failure.value}"
+    return AskEvent(
+        {
+            "type": "final",
+            "status": "degraded",
+            "answer": None,
+            "claims": [],
+            "sources": _evidence_sources(evidence_set),
+            "usage": None,
+            "abstention": None,
+            "error": {
+                "code": code,
+                "message": "generation temporarily unavailable",
+            },
+            "degraded": {
+                "active": True,
+                "mode": "evidence_only",
+                "reason": code,
+            },
+        }
+    )
+
+
+def _evidence_sources(evidence_set: EvidenceSet) -> list[dict[str, object]]:
+    return [
+        {
+            "evidence_id": item.chunk_id,
+            "source_id": item.source_id,
+            "document_id": item.document_id,
+            "document_version_id": item.document_version_id,
+            "span": list(item.span),
+        }
+        for item in evidence_set.evidence
+    ]
 
 
 def _claims(answer: GroundedAnswer) -> list[dict[str, object]]:

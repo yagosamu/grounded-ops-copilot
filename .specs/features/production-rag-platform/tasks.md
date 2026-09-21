@@ -1204,7 +1204,7 @@ operation envelope while preserving the existing module boundaries. Adequacy A-D
 PASS; assertions inspect emitted public signals and redaction behavior, not only
 collaborator calls. The full pre-push result is recorded in the commit handoff.
 
-### T45: Implement safe degraded modes
+### T45: Implement safe degraded modes [x]
 
 **What**: Add timeouts, circuit breakers and documented fallbacks for external dependencies.
 **Where**: `src/modules/resilience/policies.py`
@@ -1214,6 +1214,19 @@ collaborator calls. The full pre-push result is recorded in the commit handoff.
 **Tests**: unit and failure-injection integration tests.
 **Gate**: Full.
 **Commit**: `feat(resilience): enforce dependency failure policies`
+
+**Evidence**: `make pre-push` passed with 329 tests, zero failures and 90.50% total
+coverage. Circuit-breaker unit tests prove bounded failure thresholds, fail-fast
+open state, one half-open probe, recovery and rejected timeout/attempt settings
+(`tests/unit/modules/test_resilience_policies.py`). Failure-injection integration
+tests prove embedding falls back to marked BM25 with one provider call, generation
+returns authorized evidence without synthesis and stops calling an open provider,
+object storage returns a redacted error without transport retry multiplication,
+and telemetry failure preserves both business success and the original business
+error (`tests/integration/test_resilience_failures.py`). Real MinIO and ingestion
+tests pass with one S3 transport attempt, leaving retries to the durable job.
+Adequacy A-D: PASS under `CONSTRAINTS.md`; every failure maps to OPS-01/T45,
+assertions inspect returned state and payloads, and no test was skipped or weakened.
 
 ### T46: Add version-safe caching
 

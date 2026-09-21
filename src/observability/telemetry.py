@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -15,8 +15,8 @@ from uuid import UUID, uuid4
 
 from opentelemetry import context as otel_context
 from opentelemetry import metrics, propagate, trace
-from opentelemetry.metrics import Meter
-from opentelemetry.trace import Status, StatusCode, Tracer
+from opentelemetry.metrics import Counter, Histogram, Meter
+from opentelemetry.trace import Span, Status, StatusCode, Tracer
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -70,6 +70,24 @@ class Clock(Protocol):
     def __call__(self) -> float: ...
 
 
+class _NoOpCounter:
+    def add(
+        self,
+        amount: int | float,
+        attributes: Mapping[str, object] | None = None,
+    ) -> None:
+        return
+
+
+class _NoOpHistogram:
+    def record(
+        self,
+        amount: int | float,
+        attributes: Mapping[str, object] | None = None,
+    ) -> None:
+        return
+
+
 _CURRENT: ContextVar[TelemetryContext | None] = ContextVar(
     "grounded_ops_telemetry_context", default=None
 )
@@ -89,15 +107,8 @@ class Telemetry:
         self._logger = logger or logging.getLogger("grounded_ops.telemetry")
         self._tracer = tracer or trace.get_tracer("grounded_ops")
         actual_meter = meter or metrics.get_meter("grounded_ops")
-        self._requests = actual_meter.create_counter(
-            "grounded_ops_operations_total",
-            description="Completed GroundedOps operations",
-        )
-        self._duration = actual_meter.create_histogram(
-            "grounded_ops_operation_duration_seconds",
-            unit="s",
-            description="GroundedOps operation latency",
-        )
+        self._requests = _counter(actual_meter)
+        self._duration = _histogram(actual_meter)
         self._clock = clock
 
     def new_context(
@@ -163,26 +174,28 @@ class Telemetry:
         started = self._clock()
         error_type: str | None = None
         try:
-            with self._tracer.start_as_current_span(
-                operation.value,
-                record_exception=False,
-                set_status_on_exception=False,
-            ) as span:
-                span.set_attribute("groundedops.correlation_id", context.correlation_id)
-                span.set_attribute("groundedops.entry_point", context.entry_point.value)
-                span.set_attribute("groundedops.component", component.value)
+            with self._safe_span(operation) as span:
+                _span_attribute(
+                    span, "groundedops.correlation_id", context.correlation_id
+                )
+                _span_attribute(
+                    span, "groundedops.entry_point", context.entry_point.value
+                )
+                _span_attribute(span, "groundedops.component", component.value)
                 try:
                     yield observation
                 except Exception as error:
                     observation.outcome = TelemetryOutcome.ERROR
                     error_type = type(error).__name__
-                    span.set_status(Status(StatusCode.ERROR))
-                    span.set_attribute("error.type", error_type)
+                    _span_status(span, Status(StatusCode.ERROR))
+                    _span_attribute(span, "error.type", error_type)
                     raise
                 finally:
-                    span.set_attribute("groundedops.outcome", observation.outcome.value)
+                    _span_attribute(
+                        span, "groundedops.outcome", observation.outcome.value
+                    )
                     if observation.outcome is TelemetryOutcome.ERROR:
-                        span.set_status(Status(StatusCode.ERROR))
+                        _span_status(span, Status(StatusCode.ERROR))
         finally:
             duration_seconds = max(0.0, self._clock() - started)
             attributes = {
@@ -190,8 +203,8 @@ class Telemetry:
                 "operation": operation.value,
                 "outcome": observation.outcome.value,
             }
-            self._requests.add(1, attributes)
-            self._duration.record(duration_seconds, attributes)
+            _best_effort(lambda: self._requests.add(1, attributes))
+            _best_effort(lambda: self._duration.record(duration_seconds, attributes))
             payload: dict[str, object] = {
                 "event": (
                     "operation_failed"
@@ -205,14 +218,46 @@ class Telemetry:
             }
             if error_type is not None:
                 payload["error_type"] = error_type
-            self._logger.log(
-                logging.ERROR
-                if observation.outcome is TelemetryOutcome.ERROR
-                else logging.INFO,
-                json.dumps(payload, sort_keys=True, separators=(",", ":")),
+            _best_effort(
+                lambda: self._logger.log(
+                    logging.ERROR
+                    if observation.outcome is TelemetryOutcome.ERROR
+                    else logging.INFO,
+                    json.dumps(payload, sort_keys=True, separators=(",", ":")),
+                )
             )
             if context_token is not None:
                 _CURRENT.reset(context_token)
+
+    @contextmanager
+    def _safe_span(self, operation: TelemetryOperation) -> Iterator[Span | None]:
+        try:
+            manager = self._tracer.start_as_current_span(
+                operation.value,
+                record_exception=False,
+                set_status_on_exception=False,
+            )
+            span = manager.__enter__()
+        except Exception:
+            yield None
+            return
+        business_error: BaseException | None = None
+        try:
+            yield span
+        except BaseException as error:
+            business_error = error
+            raise
+        finally:
+            if business_error is None:
+                _best_effort(lambda: manager.__exit__(None, None, None))
+            else:
+                _best_effort(
+                    lambda: manager.__exit__(
+                        type(business_error),
+                        business_error,
+                        business_error.__traceback__,
+                    )
+                )
 
 
 class CorrelationMiddleware(BaseHTTPMiddleware):
@@ -255,3 +300,41 @@ def _entry_point(value: str | None, default: EntryPoint) -> EntryPoint:
         return EntryPoint(value) if value is not None else default
     except ValueError:
         return default
+
+
+def _counter(meter: Meter) -> Counter | _NoOpCounter:
+    try:
+        return meter.create_counter(
+            "grounded_ops_operations_total",
+            description="Completed GroundedOps operations",
+        )
+    except Exception:
+        return _NoOpCounter()
+
+
+def _histogram(meter: Meter) -> Histogram | _NoOpHistogram:
+    try:
+        return meter.create_histogram(
+            "grounded_ops_operation_duration_seconds",
+            unit="s",
+            description="GroundedOps operation latency",
+        )
+    except Exception:
+        return _NoOpHistogram()
+
+
+def _span_attribute(span: Span | None, name: str, value: str) -> None:
+    if span is not None:
+        _best_effort(lambda: span.set_attribute(name, value))
+
+
+def _span_status(span: Span | None, status: Status) -> None:
+    if span is not None:
+        _best_effort(lambda: span.set_status(status))
+
+
+def _best_effort(operation: Callable[[], object]) -> None:
+    try:
+        operation()
+    except Exception:
+        return
