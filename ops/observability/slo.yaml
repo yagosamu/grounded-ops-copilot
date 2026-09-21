@@ -1,0 +1,219 @@
+version: 1
+owner: engineering-on-call
+evaluation_interval: 1m
+
+metric_catalog:
+  grounded_ops_operations_total:
+    type: counter
+    unit: operations
+    status: emitted
+    producer: OpenTelemetry application meter
+    labels: [component, operation, outcome]
+  grounded_ops_operation_duration_seconds_bucket:
+    type: histogram
+    unit: seconds
+    status: emitted
+    producer: OpenTelemetry application meter
+    labels: [component, operation, outcome, le]
+  grounded_ops_ask_ttft_seconds_bucket:
+    type: histogram
+    unit: seconds
+    status: required_before_pilot
+    producer: API stream metrics processor
+    labels: [outcome, le]
+  grounded_ops_ask_duration_seconds_bucket:
+    type: histogram
+    unit: seconds
+    status: required_before_pilot
+    producer: API stream metrics processor
+    labels: [outcome, le]
+  grounded_ops_answer_outcomes_total:
+    type: counter
+    unit: answers
+    status: required_before_pilot
+    producer: API terminal-event metrics processor
+    labels: [outcome, reason]
+  grounded_ops_ai_cost_microusd_total:
+    type: counter
+    unit: microusd
+    status: required_before_pilot
+    producer: model usage and pricing processor
+    labels: [route, model]
+  grounded_ops_ingestion_last_success_unixtime:
+    type: gauge
+    unit: seconds
+    status: required_before_pilot
+    producer: ingestion worker metrics processor
+    labels: [source_type]
+
+slos:
+  api_availability:
+    area: availability
+    objective: 0.999
+    window: 30d
+    query: >-
+      sum(rate(grounded_ops_operations_total{component="api",operation="http.request",outcome!="error"}[5m]))
+      / sum(rate(grounded_ops_operations_total{component="api",operation="http.request"}[5m]))
+  retrieval_latency:
+    area: retrieval
+    objective_seconds: 0.8
+    percentile: 0.95
+    window: 10m
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_operation_duration_seconds_bucket{component="retrieval",operation="retrieval.query"}[10m])))
+  ask_time_to_first_token:
+    area: latency
+    objective_seconds: 2.5
+    percentile: 0.95
+    window: 10m
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_ask_ttft_seconds_bucket[10m])))
+  ask_completion_latency:
+    area: latency
+    objective_seconds: 10.0
+    percentile: 0.95
+    window: 10m
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_ask_duration_seconds_bucket[10m])))
+  ingestion_freshness:
+    area: ingestion_freshness
+    objective_seconds: 3600
+    window: 15m
+    status: pilot_hypothesis
+    query: time() - max(grounded_ops_ingestion_last_success_unixtime)
+
+dashboard:
+  id: grounded-ops-overview
+  title: GroundedOps SLO and AI operations
+  refresh: 1m
+  panels:
+    - id: api-availability
+      area: availability
+      question: Are users receiving non-5xx responses?
+      query: >-
+        sum(rate(grounded_ops_operations_total{component="api",operation="http.request",outcome!="error"}[5m]))
+        / sum(rate(grounded_ops_operations_total{component="api",operation="http.request"}[5m]))
+    - id: tail-latency
+      area: latency
+      question: Are Ask responses completing inside the p95 objective?
+      query: >-
+        histogram_quantile(0.95,
+        sum by (le) (rate(grounded_ops_ask_duration_seconds_bucket[10m])))
+    - id: operation-errors
+      area: errors
+      question: Which component is returning the most errors?
+      query: >-
+        sum by (component, operation)
+        (rate(grounded_ops_operations_total{outcome="error"}[5m]))
+    - id: ai-cost
+      area: cost
+      question: How much model cost has each route accumulated today?
+      query: >-
+        sum by (route) (increase(grounded_ops_ai_cost_microusd_total[1d])) / 1000000
+    - id: retrieval-health
+      area: retrieval
+      question: Is retrieval fast and successful enough to support Ask?
+      query: >-
+        histogram_quantile(0.95,
+        sum by (le) (rate(grounded_ops_operation_duration_seconds_bucket{component="retrieval",operation="retrieval.query"}[10m])))
+    - id: abstention-ratio
+      area: abstention
+      question: What fraction of answers abstain and for which reason?
+      query: >-
+        sum by (reason) (rate(grounded_ops_answer_outcomes_total{outcome="abstained"}[1h]))
+        / sum(rate(grounded_ops_answer_outcomes_total[1h]))
+    - id: ingestion-freshness
+      area: ingestion_freshness
+      question: How old is the latest successful ingestion?
+      query: time() - max(grounded_ops_ingestion_last_success_unixtime)
+
+alerts:
+  - id: api-availability-low
+    severity: page
+    symptom: Users are receiving too many server errors.
+    query: >-
+      sum(rate(grounded_ops_operations_total{component="api",operation="http.request",outcome!="error"}[5m]))
+      / sum(rate(grounded_ops_operations_total{component="api",operation="http.request"}[5m]))
+    comparator: lt
+    threshold: 0.99
+    for: 5m
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 0.9995, failure: 0.98}
+  - id: retrieval-latency-high
+    severity: page
+    symptom: Search evidence retrieval exceeds its p95 latency objective.
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_operation_duration_seconds_bucket{component="retrieval",operation="retrieval.query"}[10m])))
+    comparator: gt
+    threshold: 0.8
+    for: 10m
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 0.6, failure: 1.2}
+  - id: ask-ttft-high
+    severity: page
+    symptom: Users wait too long for the first answer token.
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_ask_ttft_seconds_bucket[10m])))
+    comparator: gt
+    threshold: 2.5
+    for: 10m
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 1.8, failure: 3.5}
+  - id: ask-completion-latency-high
+    severity: page
+    symptom: Users wait too long for a complete grounded answer.
+    query: >-
+      histogram_quantile(0.95,
+      sum by (le) (rate(grounded_ops_ask_duration_seconds_bucket[10m])))
+    comparator: gt
+    threshold: 10.0
+    for: 10m
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 7.5, failure: 14.0}
+  - id: ingestion-stale
+    severity: page
+    symptom: New source content is not becoming searchable within the freshness objective.
+    query: time() - max(grounded_ops_ingestion_last_success_unixtime)
+    comparator: gt
+    threshold: 3600
+    for: 15m
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 900, failure: 5400}
+  - id: daily-ai-cost-high
+    severity: ticket
+    symptom: Daily model spend exceeds the initial Pilot budget hypothesis.
+    status: pilot_hypothesis
+    query: >-
+      sum(increase(grounded_ops_ai_cost_microusd_total[1d])) / 1000000
+    comparator: gt
+    threshold: 5.0
+    for: 1h
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 2.0, failure: 7.0}
+  - id: abstention-ratio-high
+    severity: ticket
+    symptom: Too many questions end without an evidence-backed answer.
+    status: pilot_hypothesis
+    query: >-
+      sum(rate(grounded_ops_answer_outcomes_total{outcome="abstained"}[1h]))
+      / sum(rate(grounded_ops_answer_outcomes_total[1h]))
+    comparator: gt
+    threshold: 0.25
+    for: 1h
+    runbook: docs/runbooks/slo-alerts.md
+    simulation: {healthy: 0.1, failure: 0.4}
+
+evidence:
+  load_profile: tests/operational/load/reports/capacity-local-v1.json
+  degraded_modes:
+    test_nodes:
+      - tests/integration/test_resilience_failures.py::test_embedding_outage_falls_back_to_marked_bm25_without_retry_storm
+      - tests/integration/test_resilience_failures.py::test_generation_outage_returns_evidence_and_then_fails_fast
+      - tests/integration/test_resilience_failures.py::test_object_store_outage_is_redacted_and_fails_fast_after_threshold
+      - tests/integration/test_resilience_failures.py::test_object_store_rejects_transport_retry_multiplication
+      - tests/integration/test_resilience_failures.py::test_telemetry_outage_does_not_replace_the_business_result

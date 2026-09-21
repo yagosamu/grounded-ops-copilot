@@ -1,0 +1,88 @@
+{
+  "config": {
+    "path": "ops/observability/slo.yaml",
+    "sha256": "464a50ef1e82046cd7c5c48639ec91ed596ba7de867a2618c427aaf1ddb08886"
+  },
+  "evidence": {
+    "degraded_modes": {
+      "test_nodes": [
+        "tests/integration/test_resilience_failures.py::test_embedding_outage_falls_back_to_marked_bm25_without_retry_storm",
+        "tests/integration/test_resilience_failures.py::test_generation_outage_returns_evidence_and_then_fails_fast",
+        "tests/integration/test_resilience_failures.py::test_object_store_outage_is_redacted_and_fails_fast_after_threshold",
+        "tests/integration/test_resilience_failures.py::test_object_store_rejects_transport_retry_multiplication",
+        "tests/integration/test_resilience_failures.py::test_telemetry_outage_does_not_replace_the_business_result"
+      ]
+    },
+    "load_profile": {
+      "path": "tests/operational/load/reports/capacity-local-v1.json",
+      "sha256": "cb87889129cc6ec2fe3c117f68b7eae5af80de27c8d99e7741976473d031280f"
+    }
+  },
+  "generated_at": "2026-09-21T21:10:08.990598Z",
+  "metric_readiness": {
+    "emitted": 2,
+    "required_before_pilot": 5
+  },
+  "paging_alerts_passed": 5,
+  "paging_alerts_tested": 5,
+  "result": "pass",
+  "schema_version": "alert-simulation.v1",
+  "simulations": [
+    {
+      "alert_id": "api-availability-low",
+      "duration_minutes": 5,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "page"
+    },
+    {
+      "alert_id": "retrieval-latency-high",
+      "duration_minutes": 10,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "page"
+    },
+    {
+      "alert_id": "ask-ttft-high",
+      "duration_minutes": 10,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "page"
+    },
+    {
+      "alert_id": "ask-completion-latency-high",
+      "duration_minutes": 10,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "page"
+    },
+    {
+      "alert_id": "ingestion-stale",
+      "duration_minutes": 15,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "page"
+    },
+    {
+      "alert_id": "daily-ai-cost-high",
+      "duration_minutes": 60,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "ticket"
+    },
+    {
+      "alert_id": "abstention-ratio-high",
+      "duration_minutes": 60,
+      "failure_fired": true,
+      "healthy_fired": false,
+      "runbook_exists": true,
+      "severity": "ticket"
+    }
+  ]
+}

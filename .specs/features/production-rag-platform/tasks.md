@@ -1271,7 +1271,7 @@ report schema. `make operational-test` passed with 5 selected tests and `make
 pre-push` passed with 345 tests, zero failures and 90.66% total coverage. Adequacy
 A-D: PASS under `CONSTRAINTS.md`; no check was skipped or weakened.
 
-### T48: Define SLO dashboards and alerts
+### T48: Define SLO dashboards and alerts [x]
 
 **What**: Provision dashboards and actionable alerts for availability, latency, errors, cost, retrieval, abstention and ingestion freshness.
 **Where**: `ops/observability/slo.yaml`
@@ -1280,7 +1280,22 @@ A-D: PASS under `CONSTRAINTS.md`; no check was skipped or weakened.
 **Done when**: synthetic failure tests trigger every paging alert and dashboard queries resolve their stated metrics.
 **Tests**: observability configuration and alert simulation tests.
 **Gate**: Operational.
-**Commit**: `ops(observability): define slos and alerts`
+**Commit**: `feat(observability): define slos and alerts`
+
+**Evidence**: `ops/observability/slo.yaml` defines five SLOs, seven operational
+dashboard questions and seven symptom-based alerts across availability, latency,
+errors, cost, retrieval, abstention and ingestion freshness. Five paging alerts
+have thresholds, sustained durations, synthetic healthy/failure samples and
+runbook sections; all five remained quiet for healthy samples and fired for their
+failure sample. Query validation rejects metrics outside the catalog and the
+versioned simulation report is bound to the SLO config and T47 load profile by
+SHA-256. The catalog distinguishes two metrics emitted today from five required
+before Pilot, preventing unavailable telemetry from being presented as live.
+`make operational-test` passed with 10 selected tests and the five degraded-mode
+integration tests passed separately. `make pre-push` passed with 350 tests, zero
+failures and 90.66% total coverage. Adequacy A-D: PASS under `CONSTRAINTS.md`;
+assertions cover query resolution, paging behavior, actionability, runbooks and
+immutable evidence without skipped or weakened tests.
 
 **Phase gate**: `make operational-test`; publish load profile, degraded-mode evidence and alert simulation results.
 
