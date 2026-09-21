@@ -153,7 +153,7 @@ The acceptance criteria below define the testable behavior of each story.
 | SEC-02 | Untrusted-content and secret controls | Complete: prompt boundaries, grounded streaming, tenant-bound tool allowlists and HMAC-pseudonymized audit storage prevent corpus instructions and sensitive identifiers from crossing trust boundaries (T35-T36) |
 | AGT-01 | Bounded investigation | In progress: deterministic routing, policy-aware tools and a PostgreSQL-checkpointed workflow enforce step, duration, token, tool and retrieval budgets with typed partial reports (T38-T40) |
 | AGT-02 | Agent promotion benchmark | Complete: frozen v1 evidence and ADR-002 keep Investigate disabled because its 2.7x Ask cost exceeds the 2.5x threshold (T42-T43) |
-| OPS-01 | Observability and degraded modes | In progress: correlated telemetry and safe dependency policies now cover API, worker, retrieval, generation, agent, object storage and telemetry failures with bounded retries, circuit breaking and explicit fallbacks (T13, T20, T28, T31, T36-T37, T44-T45) |
+| OPS-01 | Observability and degraded modes | In progress: correlated telemetry, safe dependency policies and version-safe cache rules cover bounded retries, circuit breaking, explicit fallbacks and authorization-aware reuse without stale results (T13, T20, T28, T31, T36-T37, T44-T46) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |
 | REL-01 | Pre-push and release gates | In progress: local gates and checker configuration complete (T02-T03) |
 

@@ -1228,7 +1228,7 @@ tests pass with one S3 transport attempt, leaving retries to the durable job.
 Adequacy A-D: PASS under `CONSTRAINTS.md`; every failure maps to OPS-01/T45,
 assertions inspect returned state and payloads, and no test was skipped or weakened.
 
-### T46: Add version-safe caching
+### T46: Add version-safe caching [x]
 
 **What**: Cache only eligible retrieval and answer results using tenant, policy, corpus and model versions in the key.
 **Where**: `src/modules/cache/cache_policy.py`
@@ -1238,6 +1238,16 @@ assertions inspect returned state and payloads, and no test was skipped or weake
 **Tests**: unit, integration and adversarial cache tests.
 **Gate**: Full.
 **Commit**: `feat(cache): add version-safe response caching`
+
+**Evidence**: `make pre-push` passed with 340 tests, zero failures and 90.66% total
+coverage. Unit tests prove opaque deterministic keys change across tenant,
+principal scope, policy, corpus, model and request boundaries, while only
+authorized non-degraded retrieval and verified answers are eligible. Integration
+tests prove valid hits avoid recomputation, version changes force fresh work,
+answer hits rebind the request identity and backend failures fail open as misses.
+The adversarial test replays Alice's record for Bob and proves it is rejected.
+The final full suite took 87.96 seconds and diff coverage reached 98%. Adequacy
+A-D: PASS under `CONSTRAINTS.md`; no test or assertion was removed or weakened.
 
 ### T47: Establish load and capacity benchmarks
 

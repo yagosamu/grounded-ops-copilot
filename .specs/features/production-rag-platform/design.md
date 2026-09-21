@@ -97,6 +97,15 @@ during the recovery window and allow one half-open probe. This keeps timeout,
 retry and fallback behavior explicit at one layer instead of multiplying attempts
 across SDKs, services and jobs.
 
+Cache keys are opaque hashes over the tenant, complete principal scope, policy
+version, corpus version, model version and request parameters. Retrieval results
+must be authorized and non-degraded; answers must be verified. Cached records
+self-identify their key and kind so a backend replay across keys is rejected.
+Backend read or write failures become misses, and short TTLs reclaim unreachable
+entries after version-based invalidation. The policy remains behind a storage
+protocol and is not promoted into the production path until T47 measures a useful
+latency or cost reduction.
+
 ## Deployment Shape
 
 - `local`: Docker Compose with API, worker, PostgreSQL, OpenSearch, MinIO, Redis and telemetry dependencies.
