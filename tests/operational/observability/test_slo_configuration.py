@@ -106,3 +106,14 @@ def test_committed_simulation_report_is_bound_to_config_and_all_pages_pass() -> 
     assert report["result"] == "pass"
     assert report["evidence"]["load_profile"]["sha256"]
     assert report["evidence"]["degraded_modes"]["test_nodes"]
+
+
+def test_evidence_hashes_are_independent_of_platform_line_endings(
+    tmp_path: Path,
+) -> None:
+    lf = tmp_path / "lf.json"
+    crlf = tmp_path / "crlf.json"
+    lf.write_bytes(b'{"result":"pass"}\n')
+    crlf.write_bytes(b'{"result":"pass"}\r\n')
+
+    assert validator._file_hash(lf) == validator._file_hash(crlf)

@@ -264,4 +264,4 @@ if __name__ == "__main__":
         root / "evals/datasets/v1/manifest.yaml",
         ChunkingExperimentConfig(96, 16, 80),
     )
-    output.write_text(result.to_json(), encoding="utf-8")
+    output.write_text(result.to_json(), encoding="utf-8", newline="\n")

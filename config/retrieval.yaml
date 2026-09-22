@@ -5,5 +5,5 @@ chunking_strategy: structural
 dataset_hash: 64348837243fe876c3e024859bb4750bd25aa64a9f348994eb97f01443bd9dac
 reports:
   evals/retrieval/reports/bm25-v1.json: 5320736b942505c9014d21866ba9fdcf4b13f7d05561ce67f2d868bb80cc9ee4
-  evals/retrieval/reports/chunking-v1.json: 22015c2ab41ea337ad361a2c1a3370ab0d6d03929911fadd7b0b5e0676c15b22
-  evals/retrieval/reports/candidates-v1.json: bb3da5d93be54bca3358ecd22f1dbb4213683bbe5b21f792cfc4345cd5788033
+  evals/retrieval/reports/chunking-v1.json: e1e8045ab6bd538eb9e791f728e3e12a12a32c461f571fdf24418f81d4d59683
+  evals/retrieval/reports/candidates-v1.json: 0373b2b650b900e800d1ecb2d50fb5bbb20d680a3fe6d0734b49b00558e4500f

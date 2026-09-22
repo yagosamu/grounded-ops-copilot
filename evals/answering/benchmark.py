@@ -462,7 +462,7 @@ def main() -> int:
         judge_version=judge_version,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report.to_json(), encoding="utf-8")
+    args.output.write_text(report.to_json(), encoding="utf-8", newline="\n")
     print(
         json.dumps(
             {

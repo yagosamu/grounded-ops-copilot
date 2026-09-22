@@ -1327,13 +1327,15 @@ manifest binds seven reports to their SHA-256 hashes. The 16-test discrimination
 suite makes each of lint, types, tests, evals, migrations, secrets and security fail
 the aggregate independently, detects modified evidence and enforces portable report
 bytes plus an OSV-compatible toolchain. The first remote run exposed CRLF-dependent
-report hashing and Go 1.25 incompatibility with OSV Scanner 2.6.0; LF output,
-`.gitattributes`, the canonical report hash, Go 1.27 and the Node 24 setup action now
-lock those regressions down. Actionlint accepted the corrected workflow. The local
-`make release-check` passed with 367 tests, 90.67% total coverage, zero secrets and
-120 release-marker tests. Adequacy A-D: PASS under `CONSTRAINTS.md`; no gate is
-non-blocking and no scanner rule was suppressed. A clean remote rerun is required
-after push.
+report hashing and Go 1.25 incompatibility with OSV Scanner 2.6.0. The second run
+confirmed the security correction and exposed the same CRLF dependency in the
+retrieval and SLO evidence links. Every versioned report writer now emits LF, text
+evidence hashes normalize platform line endings, and the committed references bind
+to the LF bytes stored by Git. Regression tests cover all seven reports and both
+hash-validation paths. The corrected local `make release-check` passed with 368
+tests, 90.67% total coverage, zero secrets and 120 release-marker tests. Adequacy
+A-D: PASS under `CONSTRAINTS.md`; no gate is non-blocking and no scanner rule was
+suppressed. A clean remote rerun is required after push.
 
 ### T50: Build immutable deployment artifacts
 

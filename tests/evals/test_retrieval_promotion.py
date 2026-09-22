@@ -56,7 +56,7 @@ def test_versioned_config_names_bm25_production_fallback_and_immutable_reports()
         "64348837243fe876c3e024859bb4750bd25aa64a9f348994eb97f01443bd9dac"
     )
     for relative_path, expected_hash in config.reports.items():
-        content = (ROOT / relative_path).read_bytes()
+        content = (ROOT / relative_path).read_bytes().replace(b"\r\n", b"\n")
         assert sha256(content).hexdigest() == expected_hash
 
 

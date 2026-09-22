@@ -15,7 +15,7 @@
     },
     "load_profile": {
       "path": "tests/operational/load/reports/capacity-local-v1.json",
-      "sha256": "cb87889129cc6ec2fe3c117f68b7eae5af80de27c8d99e7741976473d031280f"
+      "sha256": "dc25db7a95a2e97609796dc7d2626d358ebb82def15b34c99c408387d8b19148"
     }
   },
   "generated_at": "2026-09-21T21:10:08.990598Z",

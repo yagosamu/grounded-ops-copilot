@@ -646,7 +646,7 @@ def main() -> None:
         reproduction_command=command,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report.to_json(), encoding="utf-8")
+    args.output.write_text(report.to_json(), encoding="utf-8", newline="\n")
     print(report.to_json(), end="")
 
 

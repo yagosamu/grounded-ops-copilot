@@ -202,5 +202,7 @@ if __name__ == "__main__":
         root / "evals/retrieval/reports/bm25-v1.json",
     )
     (root / "evals/retrieval/reports/candidates-v1.json").write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )

@@ -282,7 +282,7 @@ def _duration_minutes(value: str) -> int:
 
 
 def _file_hash(path: Path) -> str:
-    return sha256(path.read_bytes()).hexdigest()
+    return sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _parse_args() -> argparse.Namespace:
@@ -300,7 +300,9 @@ def main() -> None:
     report = build_report(config_path=config_path, root=root)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
     print(json.dumps(report, indent=2, sort_keys=True))
 

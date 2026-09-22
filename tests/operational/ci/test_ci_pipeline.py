@@ -102,6 +102,16 @@ def test_versioned_reports_have_platform_independent_lf_bytes() -> None:
     assert len(attributes) == len(VERSIONED_REPORTS)
     assert all(line.endswith(": eol: lf") for line in attributes)
     assert b"\r\n" not in (ROOT / VERSIONED_REPORTS[0]).read_bytes()
+    committed = tuple(
+        subprocess.run(
+            ["git", "show", f"HEAD:{path.as_posix()}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        ).stdout
+        for path in VERSIONED_REPORTS
+    )
+    assert all(b"\r\n" not in content for content in committed)
 
 
 @pytest.mark.parametrize("failed_gate", sorted(REQUIRED_GATES))
