@@ -299,7 +299,7 @@ def main() -> int:
     dataset = load_dataset(args.dataset)
     report = evaluate(**dataset.evaluation_inputs())
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report.to_json(), encoding="utf-8")
+    args.output.write_text(report.to_json(), encoding="utf-8", newline="\n")
     print(
         json.dumps(
             {

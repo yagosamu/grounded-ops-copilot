@@ -1323,14 +1323,17 @@ pinned to full commit SHAs and `release / required` fails unless both upstream j
 succeed. The checked-in branch-protection contract names that single stable status
 and explicitly records that repository-side enforcement is still pending. Release
 reports are uploaded with the commit SHA in the immutable artifact name and a
-manifest binds seven reports to their SHA-256 hashes. The 14-test discrimination
+manifest binds seven reports to their SHA-256 hashes. The 16-test discrimination
 suite makes each of lint, types, tests, evals, migrations, secrets and security fail
-the aggregate independently, and detects modified evidence. Actionlint accepted the
-workflow, Semgrep 1.177.0 reported zero blocking findings, and OSV Scanner 2.6.0
-found no dependency at the blocking CVSS >= 7 threshold. `make release-check`
-passed with 364 tests, 90.67% total coverage, 100% diff coverage, zero secrets and
-119 release-marker tests. Adequacy A-D: PASS under `CONSTRAINTS.md`; no gate is
-non-blocking and no scanner rule was suppressed.
+the aggregate independently, detects modified evidence and enforces portable report
+bytes plus an OSV-compatible toolchain. The first remote run exposed CRLF-dependent
+report hashing and Go 1.25 incompatibility with OSV Scanner 2.6.0; LF output,
+`.gitattributes`, the canonical report hash, Go 1.27 and the Node 24 setup action now
+lock those regressions down. Actionlint accepted the corrected workflow. The local
+`make release-check` passed with 367 tests, 90.67% total coverage, zero secrets and
+120 release-marker tests. Adequacy A-D: PASS under `CONSTRAINTS.md`; no gate is
+non-blocking and no scanner rule was suppressed. A clean remote rerun is required
+after push.
 
 ### T50: Build immutable deployment artifacts
 

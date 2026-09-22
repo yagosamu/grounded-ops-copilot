@@ -10,6 +10,6 @@ budgets:
   max_retrieval_attempts: 5
 benchmark:
   report: evals/agentic/reports/agentic-v1.json
-  report_sha256: f7d5599891b0e2f0cafb1b6bc94804cce744f03f33853dcd81e688fa4d51a9c8
+  report_sha256: eb9c2c0fed65842da5678ca7d9c22c7ddba6370d3b01150f1cbecce7f4228c4a
   minimum_success_gain: 0.10
   maximum_cost_ratio: 2.5

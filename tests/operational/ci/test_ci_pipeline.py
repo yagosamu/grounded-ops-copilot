@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,16 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "ci.yml"
 BRANCH_PROTECTION_PATH = ROOT / ".github" / "branch-protection.yml"
 VALIDATOR_PATH = ROOT / "scripts" / "ci_contract.py"
 SECURITY_POLICY_PATH = ROOT / "scripts" / "security_policy.py"
+VERSIONED_REPORTS = (
+    Path("evals/agentic/reports/agentic-v1.json"),
+    Path("evals/answering/reports/answering-v1.json"),
+    Path("evals/retrieval/reports/bm25-v1.json"),
+    Path("evals/retrieval/reports/candidates-v1.json"),
+    Path("evals/retrieval/reports/chunking-v1.json"),
+    Path("ops/observability/reports/alert-simulation-v1.json"),
+    Path("tests/operational/load/reports/capacity-local-v1.json"),
+)
+SETUP_GO_NODE24 = "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16"
 REQUIRED_GATES = {
     "lint",
     "types",
@@ -68,6 +79,29 @@ def test_pipeline_is_secure_bounded_and_bound_to_branch_protection() -> None:
     assert workflow["permissions"] == {"contents": "read"}
     assert workflow["jobs"]["release"]["timeout-minutes"] <= 15
     assert workflow["jobs"]["security"]["timeout-minutes"] <= 15
+
+
+def test_security_job_uses_osv_compatible_go_and_node24_action() -> None:
+    workflow = validator.load_yaml(WORKFLOW_PATH)
+    steps = workflow["jobs"]["security"]["steps"]
+    go_step = next(step for step in steps if step["name"] == "Install Go")
+
+    assert go_step["uses"] == SETUP_GO_NODE24
+    assert tuple(map(int, go_step["with"]["go-version"].split("."))) >= (1, 27, 0)
+
+
+def test_versioned_reports_have_platform_independent_lf_bytes() -> None:
+    attributes = subprocess.run(
+        ["git", "check-attr", "eol", "--", *(str(path) for path in VERSIONED_REPORTS)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+
+    assert len(attributes) == len(VERSIONED_REPORTS)
+    assert all(line.endswith(": eol: lf") for line in attributes)
+    assert b"\r\n" not in (ROOT / VERSIONED_REPORTS[0]).read_bytes()
 
 
 @pytest.mark.parametrize("failed_gate", sorted(REQUIRED_GATES))

@@ -12,6 +12,7 @@ from evals.agentic.benchmark import (
     PromotionThresholds,
     evaluate,
     load_dataset,
+    main,
 )
 
 pytestmark = pytest.mark.agentic
@@ -142,6 +143,25 @@ def test_frozen_report_is_repeatable_and_covers_required_failure_modes() -> None
     assert first.cost_ratio == pytest.approx(2.7)
     assert first.qualified is False
     assert first.rejections == ("cost ratio above 2.50x",)
+
+
+def test_report_writer_uses_platform_independent_lf(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "agentic.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "agentic-benchmark",
+            "--dataset",
+            str(ROOT / "evals/agentic/dataset-v1.yaml"),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert main() == 0
+    assert b"\r\n" not in output.read_bytes()
 
 
 def test_rejects_missing_duplicate_or_non_positive_baseline_measurements() -> None:
