@@ -1418,11 +1418,50 @@ Checks B/D: assertions inspect durable state, queue payload, index fields and
 redacted errors rather than mock counts; tests follow `CONSTRAINTS.md` and the
 Test Coverage Matrix. Adequacy A-D: PASS.
 
+**Pilot readiness adjustment**: T50B proves local delivery, but its MinIO
+credentials and unsigned OpenSearch client cannot authenticate to AWS-managed
+services. The container also starts the API without production dependencies,
+leaving only health routes. T50C closes the worker identity gap; T50D composes
+the real API before Terraform deployment. Both are locally gated tasks.
+
+### T50C: Use AWS task identity in the ingestion worker [x]
+
+**What**: Keep the MinIO path local and use task-role credentials for S3 and SigV4-signed OpenSearch in the Pilot.
+**Where**: `src/grounded_ops/worker.py`, worker runtime tests.
+**Depends on**: T50B
+**Requirement**: ING-02, SEC-02, OPS-01
+**Done when**: cloud mode passes no static access keys, signs OpenSearch requests and fails closed when task credentials are absent; local MinIO remains functional.
+**Tests**: local and cloud runtime wiring, missing-credentials failure.
+**Gate**: Release.
+**Commit**: `feat(worker): use AWS task identity for managed services`
+
+**Evidence**: `make release-check BASE=origin/main` passed with 387 tests,
+90.67% total coverage, 100% diff coverage over 17 changed lines, zero secrets,
+a clean floor guard and 131 release-marker tests. Cloud mode omits static S3
+access keys (`test_cloud_worker_runtime.py:66-67`), signs OpenSearch with the
+task identity and `es` service (`:70-76`), and rejects missing credentials
+before opening S3 or search clients while disposing the database (`:111-113`).
+The existing local wiring test preserves MinIO and local OpenSearch
+(`test_ingestion_worker_entrypoint.py:75-86`). These assertions map directly to
+the T50C done-when criteria; no test was skipped, removed or weakened.
+Adequacy A-D: PASS.
+
+### T50D: Compose the production API runtime
+
+**What**: Start the container with real, authorized Search and Ask dependencies instead of a health-only application.
+**Where**: `src/grounded_ops/`, `Dockerfile`, API and integration tests.
+**Depends on**: T50C
+**Requirement**: ANS-01, SEC-01, OPS-01
+**Done when**: a container started from configuration serves authenticated Search and Ask through PostgreSQL, OpenSearch and the selected generation model; absent credentials or unavailable required services fail closed and readiness reflects them.
+**Tests**: configuration failures, live dependency composition, authorized Search and Ask smoke.
+**Gate**: Release.
+**Commit**: `feat(api): compose production search and ask runtime`
+
 ### T51: Provision the AWS Pilot environment
 
 **What**: Define the Terraform-managed AWS Pilot profile with ECS Fargate, RDS PostgreSQL, S3, reduced Amazon OpenSearch Service, load balancing, secrets and telemetry.
 **Where**: `infra/staging/`
-**Depends on**: T50B
+**Depends on**: T50D
 **Requirement**: OPS-01, REL-01
 **Done when**: plan is repeatable, least-privilege checks pass, no secret appears in state or logs and the environment can be created and destroyed from documented commands.
 **Tests**: infrastructure validation, policy and deployment smoke tests.
@@ -1530,7 +1569,7 @@ Test Coverage Matrix. Adequacy A-D: PASS.
 | 5 | Fase 4 | T33 depends on T32 | Pass |
 | 6 | Fase 5 | T38 depends on T37 | Pass |
 | 7 | Fase 6 | T44 depends on T43 | Pass |
-| 8 | Fase 8 | T49 depends on T48; T50 depends on T49; T50B depends on T13 and T50; T51 depends on T50B | Pass |
+| 8 | Fase 8 | T49 depends on T48; T50 depends on T49; T50B depends on T13 and T50; T50C depends on T50B; T50D depends on T50C; T51 depends on T50D | Pass |
 
 ## Test Co-location Validation
 

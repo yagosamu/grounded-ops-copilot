@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Protocol
 import boto3
 from botocore.config import Config
 from celery import Celery
-from opensearchpy import OpenSearch
+from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from sqlalchemy import URL, Engine, create_engine, text
 
 from adapters.object_store.document_store import ArtifactRef, DocumentStore
@@ -250,22 +250,44 @@ def _build_runtime() -> WorkerRuntime:
         database="grounded_ops",
     )
     engine = create_engine(database_url, pool_pre_ping=True)
-    s3: S3Client = boto3.client(
-        "s3",
-        endpoint_url=os.environ["S3_ENDPOINT"],
-        aws_access_key_id=os.environ["MINIO_ROOT_USER"],
-        aws_secret_access_key=os.environ["MINIO_ROOT_PASSWORD"],
-        region_name="us-east-1",
-        config=Config(
-            connect_timeout=2, read_timeout=5, retries={"total_max_attempts": 1}
-        ),
+    region = os.getenv("AWS_REGION", "us-east-1")
+    s3_config = Config(
+        connect_timeout=2, read_timeout=5, retries={"total_max_attempts": 1}
     )
+    endpoint = os.getenv("S3_ENDPOINT")
+    credentials = None
+    if not endpoint:
+        credentials = boto3.Session().get_credentials()
+        if credentials is None:
+            engine.dispose()
+            raise RuntimeError("AWS task credentials are unavailable")
+    if endpoint:
+        s3: S3Client = boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=os.environ["MINIO_ROOT_USER"],
+            aws_secret_access_key=os.environ["MINIO_ROOT_PASSWORD"],
+            region_name=region,
+            config=s3_config,
+        )
+    else:
+        s3 = boto3.client("s3", region_name=region, config=s3_config)
     store = DocumentStore(s3, os.environ["S3_BUCKET"])
-    client = OpenSearch(
-        hosts=[os.environ["OPENSEARCH_URL"]],
-        timeout=5,
-        max_retries=1,
-    )
+    if endpoint:
+        client = OpenSearch(
+            hosts=[os.environ["OPENSEARCH_URL"]], timeout=5, max_retries=1
+        )
+    else:
+        assert credentials is not None
+        client = OpenSearch(
+            hosts=[os.environ["OPENSEARCH_URL"]],
+            http_auth=AWSV4SignerAuth(credentials, region, "es"),
+            use_ssl=True,
+            verify_certs=True,
+            connection_class=RequestsHttpConnection,
+            timeout=5,
+            max_retries=1,
+        )
 
     def close() -> None:
         client.close()
