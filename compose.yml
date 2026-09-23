@@ -1,4 +1,26 @@
 services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in your local environment}
+      OPENSEARCH_URL: http://opensearch:9200
+      OPENSEARCH_AUTH_MODE: local
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_VERIFICATION_KEY: ${JWT_VERIFICATION_KEY:-}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-RS256}
+      JWT_ISSUER: ${JWT_ISSUER:-}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-}
+      AUDIT_REDACTION_KEY: ${AUDIT_REDACTION_KEY:-}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
   postgres:
     image: postgres:16.10-alpine
     environment:

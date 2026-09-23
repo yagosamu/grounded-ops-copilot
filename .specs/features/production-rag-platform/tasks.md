@@ -1446,7 +1446,7 @@ The existing local wiring test preserves MinIO and local OpenSearch
 the T50C done-when criteria; no test was skipped, removed or weakened.
 Adequacy A-D: PASS.
 
-### T50D: Compose the production API runtime
+### T50D: Compose the production API runtime [x]
 
 **What**: Start the container with real, authorized Search and Ask dependencies instead of a health-only application.
 **Where**: `src/grounded_ops/`, `Dockerfile`, API and integration tests.
@@ -1456,6 +1456,17 @@ Adequacy A-D: PASS.
 **Tests**: configuration failures, live dependency composition, authorized Search and Ask smoke.
 **Gate**: Release.
 **Commit**: `feat(api): compose production search and ask runtime`
+
+**Evidence**: `make release-check BASE=origin/main` passed with 393 tests,
+90.38% total coverage, 83% diff coverage over 130 changed Python lines,
+zero secrets, a clean floor guard and 137 release-marker tests. The configured
+runtime served tenant-scoped Search and citation-verified Ask using PostgreSQL
+and OpenSearch (`test_api_runtime.py`); unauthenticated requests were rejected
+and authorization was recorded durably. Missing or unsafe configuration exposed
+only health routes, and PostgreSQL/OpenSearch probe failures returned readiness
+503. The Docker image started the runtime factory and returned readiness 503
+without credentials (`test_container_runtime.py`). No test was skipped,
+removed or weakened. Adequacy A-D: PASS.
 
 ### T51: Provision the AWS Pilot environment
 

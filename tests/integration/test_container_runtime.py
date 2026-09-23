@@ -119,6 +119,13 @@ def test_api_image_is_minimal_unprivileged_and_serves_liveness() -> None:
         ).stdout.strip()
         port = int(published.rsplit(":", 1)[1])
         _assert_liveness(port)
+        with pytest.raises(urllib.error.HTTPError) as unavailable:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/health/ready", timeout=2)
+        assert unavailable.value.code == 503
+        assert json.load(unavailable.value) == {
+            "status": "unavailable",
+            "dependencies": ["configuration"],
+        }
     finally:
         subprocess.run(
             ["docker", "stop", container],
