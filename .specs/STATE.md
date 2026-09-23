@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 8 in progress; T49 is complete.
-- **Completed**: T01-T49, including fail-closed GitHub CI, security scans and immutable release evidence.
+- **Phase / Task**: Phase 8 in progress; T50B is complete.
+- **Completed**: T01-T50B, including fail-closed GitHub CI, hardened API image and durable ingestion worker.
 - **In-progress**: none.
-- **Next step**: T50, build hardened and immutable API and worker images.
+- **Next step**: T51, provision and validate the AWS Pilot environment.
 - **Blockers**: none.
-- **Uncommitted files**: none after the T49 atomic commit; `progress.md` remains ignored and local.
+- **Uncommitted files**: none after the T50B atomic commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

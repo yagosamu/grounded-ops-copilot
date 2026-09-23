@@ -1368,7 +1368,7 @@ T50B adds and verifies a real worker before the Pilot is provisioned. API and wo
 will use the same image digest with different commands, avoiding version drift while
 not publishing an image that cannot process work.
 
-### T50B: Add the executable ingestion worker
+### T50B: Add the executable ingestion worker [x]
 
 **What**: Connect ingestion submission, queue delivery and the existing bounded pipeline to a separately runnable worker process.
 **Where**: `src/grounded_ops/worker.py`, queue adapter, local Compose and integration tests.
@@ -1378,6 +1378,45 @@ not publishing an image that cannot process work.
 **Tests**: real queue/database integration, duplicate delivery, retry/resume, worker interruption and shutdown.
 **Gate**: Release.
 **Commit**: `feat(worker): process durable ingestion jobs`
+
+**Evidence**: `make release-check BASE=origin/main` passed: 385 tests in the
+coverage run, 131 release-marker tests, 90.63% total coverage, 93% diff coverage,
+zero secrets and a clean floor guard. The same run includes the successful
+`make pre-push` prerequisite. A separate container smoke started the non-root
+Celery worker and embedded beat, reached `ready` against real Redis, and showed
+warm shutdown on Ctrl+C. The API image and worker use the same production image.
+Removing the remote Dockerfile frontend directive also removed a repeated
+Docker Hub TLS dependency from local builds; the digest-pinned base and runtime
+image tests remain unchanged. No test was skipped, removed or weakened.
+
+**Adequacy A — required outcomes** (`tests/integration/test_ingestion_worker.py`
+unless noted):
+
+| Criterion | Exact assertion evidence | Spec-defined outcome |
+| --- | --- | --- |
+| Separate executable worker and real broker | `:61` `assert command[:4] == ["celery", "-A", "grounded_ops.worker:celery_app", "worker"]`; `:130` `assert job is not None and job.state == JobState.COMPLETED` | A queued job is delivered and persisted by a separate worker |
+| Duplicate delivery and canonical version | `:119` `assert first.id == second.id`; `:131` `assert len(versions) == 1` | One canonical version for repeated submissions |
+| Bounded retry and resume | `:149` `assert checkpoint.resume_from == JobState.INDEXING`; `:151` `assert checkpoint.attempts == 1`; `:154` `assert second == JobState.COMPLETED.value` | Checkpoint survives and later delivery completes |
+| Error classes and exhausted delivery | `:325` `assert checkpoint.error_class == "worker_internal"`; `:356` `assert final.state == JobState.FAILED`; `:357` `assert final.error_class == "worker_lost"` | Redacted, terminal failure after bounded attempts |
+| Broker or worker loss recovery | `:266` `assert persisted is not None and persisted.state == JobState.QUEUED`; `:269` `assert worker.recover_pending(database, queue) == 1`; `:295` `assert row["state"] == JobState.QUEUED.value`; `:299` `assert queue.messages == [("alpha", str(row["id"]))]` | PostgreSQL retains and republishes work |
+| Versioned, authorized projection | `:233` `assert len(hits) > 0`; `:234` `assert all(hit["_source"]["tenant_id"] == "alpha" for hit in hits)`; `:235` `assert all(hit["_source"]["policy"] == ["engineers"] for hit in hits)` | Search contains tenant-scoped evidence from the committed version |
+| Measured chunking bound | `:183` `assert all(len(chunk.text.split()) <= worker.CHUNK_MAX_TOKENS for chunk in sink.chunks.values())`; `:187` `assert worker.CHUNK_MAX_TOKENS == 80` | Executable ingestion uses the evaluated structural bound |
+| Correlation and graceful shutdown | `tests/unit/modules/test_ingestion_worker_entrypoint.py:121` `assert contexts == [(job_id, EntryPoint.WORKER)]`; `:123` `assert closed == [True]`; `tests/integration/test_ingestion_worker.py:390` `assert final is not None and final.state == JobState.COMPLETED` | Job correlation survives delivery; completed work persists after worker exit |
+
+**Adequacy C — necessary tests**: Compose and CLI assertions at
+`test_ingestion_worker.py:61-66` and
+`test_ingestion_worker_entrypoint.py:182-187,220-221` prove runnable submission,
+recovery and migration; duplicate/queue assertions at `:119-133` prove ING-01;
+retry, interruption, broker outage and terminal failure assertions at
+`:145-158,249-357` prove bounded delivery and recovery; live-index and chunk
+assertions at `:178-235` prove ING-02; correlation and shutdown assertions at
+`test_ingestion_worker_entrypoint.py:120-123,139-141` and
+`test_ingestion_worker.py:387-390` prove OPS-01. Existing deletion and parser/
+chunker provenance remain covered by `test_ingestion_pipeline_e2e.py:109-112`
+and `test_ingestion_pipeline.py:199-208`; T50B does not alter those contracts.
+Checks B/D: assertions inspect durable state, queue payload, index fields and
+redacted errors rather than mock counts; tests follow `CONSTRAINTS.md` and the
+Test Coverage Matrix. Adequacy A-D: PASS.
 
 ### T51: Provision the AWS Pilot environment
 

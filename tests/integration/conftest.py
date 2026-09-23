@@ -147,6 +147,46 @@ def artifact_bucket(s3_client: S3Client) -> str:
 
 
 @pytest.fixture(scope="session")
+def redis_url() -> Iterator[str]:
+    environment = os.environ | {
+        "TEST_POSTGRES_PASSWORD": uuid4().hex,
+        "TEST_MINIO_USER": uuid4().hex,
+        "TEST_MINIO_PASSWORD": uuid4().hex,
+    }
+    command = [
+        "docker",
+        "compose",
+        "-f",
+        "tests/integration/compose.yml",
+        "-p",
+        f"grounded-test-{uuid4().hex[:12]}",
+    ]
+    try:
+        subprocess.run(
+            command + ["up", "-d", "--wait", "redis"],
+            env=environment,
+            check=True,
+            capture_output=True,
+        )
+        result = subprocess.run(
+            command + ["port", "redis", "6379"],
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        port = int(result.stdout.strip().rsplit(":", 1)[1])
+        yield f"redis://127.0.0.1:{port}/0"
+    finally:
+        subprocess.run(
+            command + ["down", "--volumes"],
+            env=environment,
+            check=True,
+            capture_output=True,
+        )
+
+
+@pytest.fixture(scope="session")
 def opensearch_client() -> Iterator[OpenSearch]:
     environment = os.environ | {
         "TEST_POSTGRES_PASSWORD": uuid4().hex,

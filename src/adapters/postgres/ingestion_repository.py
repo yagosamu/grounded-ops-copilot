@@ -20,6 +20,15 @@ class Submission:
     job: IngestionJob
 
 
+@dataclass(frozen=True)
+class DeliveryRecord:
+    source: Source
+    canonical_key: str
+    source_version: str
+    source_timestamp: datetime
+    content_hash: str
+
+
 class IngestionRepository:
     """The caller owns commit/rollback through an SQLAlchemy transaction."""
 
@@ -262,6 +271,119 @@ class IngestionRepository:
             .one_or_none()
         )
         return self._job(row) if row else None
+
+    def get_delivery(self, tenant_id: str, job_id: str) -> DeliveryRecord | None:
+        row = (
+            self.connection.execute(
+                text("""
+                SELECT s.id AS source_id,s.type,s.external_ref,s.policy,s.cursor,
+                    d.canonical_key,v.source_version,v.source_timestamp,v.content_hash
+                FROM ingestion_jobs j
+                JOIN document_versions v ON v.tenant_id=j.tenant_id
+                    AND v.id=j.version_id
+                JOIN documents d ON d.tenant_id=v.tenant_id AND d.id=v.document_id
+                JOIN sources s ON s.tenant_id=d.tenant_id AND s.id=d.source_id
+                WHERE j.tenant_id=:tenant AND j.id=:job
+            """),
+                {"tenant": tenant_id, "job": job_id},
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        source = Source(
+            str(row["source_id"]),
+            tenant_id,
+            str(row["type"]),
+            str(row["external_ref"]),
+            tuple(str(entry) for entry in row["policy"]),
+            row["cursor"],
+        )
+        return DeliveryRecord(
+            source,
+            str(row["canonical_key"]),
+            str(row["source_version"]),
+            row["source_timestamp"],
+            str(row["content_hash"]),
+        )
+
+    def claim_delivery(self, tenant_id: str, job_id: str) -> int | None:
+        row = self.connection.execute(
+            text("""
+                UPDATE ingestion_jobs SET delivery_attempts=delivery_attempts+1,
+                    updated_at=now()
+                WHERE tenant_id=:tenant AND id=:job
+                    AND state NOT IN ('completed','failed')
+                RETURNING delivery_attempts
+            """),
+            {"tenant": tenant_id, "job": job_id},
+        ).scalar_one_or_none()
+        return int(row) if row is not None else None
+
+    def fail_lost_delivery(self, tenant_id: str, job_id: str) -> None:
+        self.connection.execute(
+            text("""
+                UPDATE ingestion_jobs SET state='failed',error_class='worker_lost',
+                    resume_from=NULL,updated_at=now()
+                WHERE tenant_id=:tenant AND id=:job
+                    AND state NOT IN ('completed','failed')
+            """),
+            {"tenant": tenant_id, "job": job_id},
+        )
+
+    def record_worker_error(
+        self, tenant_id: str, job_id: str, max_attempts: int
+    ) -> None:
+        self.connection.execute(
+            text("""
+                UPDATE ingestion_jobs SET
+                    state=CASE WHEN attempts+1 >= :maximum
+                        OR delivery_attempts >= :maximum
+                        THEN 'failed' ELSE 'retrying' END,
+                    attempts=attempts+1,
+                    error_class='worker_internal',
+                    resume_from=CASE
+                        WHEN state='queued' THEN 'fetching'
+                        WHEN state='retrying' THEN COALESCE(resume_from,'fetching')
+                        ELSE state END,
+                    updated_at=now()
+                WHERE tenant_id=:tenant AND id=:job
+                    AND state NOT IN ('completed','failed')
+            """),
+            {"tenant": tenant_id, "job": job_id, "maximum": max_attempts},
+        )
+
+    def mark_dispatched(self, tenant_id: str, job_id: str) -> None:
+        self.connection.execute(
+            text("""
+                UPDATE ingestion_jobs SET dispatched_at=now()
+                WHERE tenant_id=:tenant AND id=:job
+                    AND state NOT IN ('completed','failed')
+            """),
+            {"tenant": tenant_id, "job": job_id},
+        )
+
+    def claim_recovery_batch(self, limit: int) -> list[tuple[str, str]]:
+        if not 1 <= limit <= 1000:
+            raise ValueError("invalid recovery batch limit")
+        rows = self.connection.execute(
+            text("""
+                WITH due AS (
+                    SELECT tenant_id,id FROM ingestion_jobs
+                    WHERE state NOT IN ('completed','failed')
+                        AND (dispatched_at IS NULL
+                            OR dispatched_at < now()-interval '60 seconds')
+                    ORDER BY dispatched_at NULLS FIRST,created_at
+                    LIMIT :limit FOR UPDATE SKIP LOCKED
+                )
+                UPDATE ingestion_jobs j SET dispatched_at=now()
+                FROM due WHERE j.tenant_id=due.tenant_id AND j.id=due.id
+                RETURNING j.tenant_id,j.id
+            """),
+            {"limit": limit},
+        ).mappings()
+        return [(str(row["tenant_id"]), str(row["id"])) for row in rows]
 
     def list_versions(self, tenant_id: str, document_id: str) -> list[DocumentVersion]:
         rows = self.connection.execute(

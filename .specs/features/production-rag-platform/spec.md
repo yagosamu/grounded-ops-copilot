@@ -143,8 +143,8 @@ The acceptance criteria below define the testable behavior of each story.
 | Requirement ID | Capability | Status |
 | --- | --- | --- |
 | FND-01 | Reproducible foundation and gates | Phase 0 complete (T01-T05) |
-| ING-01 | Idempotent ingestion | Phase 1 complete: source lifecycle, canonical versions, bounded retries and resumable orchestration (T07-T13) |
-| ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection (T07-T15) |
+| ING-01 | Idempotent ingestion | Complete: source lifecycle, canonical versions, bounded retries and resumable orchestration now run through durable worker delivery (T07-T13, T50B) |
+| ING-02 | Versioning and provenance | Complete: durable history, artifacts, spans, chunks and OpenSearch projection are exercised through the worker (T07-T15, T50B) |
 | RET-01 | Authorized BM25 baseline | Complete: versioned dataset, authorized search and persisted baseline report (T06, T14-T19) |
 | RET-02 | Experimental retrieval promotion | Complete: measured candidates rejected below thresholds; BM25 with structural chunking remains production and BM25 fallback (T19-T25) |
 | ANS-01 | Grounded citations | Complete: verified streaming Ask and live multi-model benchmark promote GPT-4o Mini with 100% citation coverage and zero invalid citations (T06, T26-T32) |
@@ -153,7 +153,7 @@ The acceptance criteria below define the testable behavior of each story.
 | SEC-02 | Untrusted-content and secret controls | Complete: prompt boundaries, grounded streaming, tenant-bound tool allowlists and HMAC-pseudonymized audit storage prevent corpus instructions and sensitive identifiers from crossing trust boundaries (T35-T36) |
 | AGT-01 | Bounded investigation | In progress: deterministic routing, policy-aware tools and a PostgreSQL-checkpointed workflow enforce step, duration, token, tool and retrieval budgets with typed partial reports (T38-T40) |
 | AGT-02 | Agent promotion benchmark | Complete: frozen v1 evidence and ADR-002 keep Investigate disabled because its 2.7x Ask cost exceeds the 2.5x threshold (T42-T43) |
-| OPS-01 | Observability and degraded modes | Complete: correlated telemetry, bounded failure policies, authorization-aware caching, reproducible capacity evidence and simulated SLO alerts cover safe operation and explicit Pilot-readiness gaps (T13, T20, T28, T31, T36-T37, T44-T48) |
+| OPS-01 | Observability and degraded modes | Complete: correlated telemetry, bounded failure policies, authorization-aware caching, reproducible capacity evidence, simulated SLO alerts and recoverable worker delivery cover safe operation and explicit Pilot-readiness gaps (T13, T20, T28, T31, T36-T37, T44-T48, T50B) |
 | OPS-02 | Reindex and recovery | In progress: immutable schemas, aliases and rollback-safe version projection complete (T14-T15) |
 | REL-01 | Pre-push and release gates | In progress: local gates plus fail-closed GitHub CI, security scans, immutable report evidence and a branch-protection contract are complete (T02-T03, T49) |
 

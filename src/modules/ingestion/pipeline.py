@@ -28,12 +28,23 @@ class IndexPreparationError(RuntimeError):
 
 
 class SourceEventView(Protocol):
-    kind: str
-    source: Source
-    canonical_key: str
-    source_version: str
-    source_timestamp: datetime
-    content: bytes | None
+    @property
+    def kind(self) -> str: ...
+
+    @property
+    def source(self) -> Source: ...
+
+    @property
+    def canonical_key(self) -> str: ...
+
+    @property
+    def source_version(self) -> str: ...
+
+    @property
+    def source_timestamp(self) -> datetime: ...
+
+    @property
+    def content(self) -> bytes | None: ...
 
 
 class ArtifactView(Protocol):
@@ -46,9 +57,14 @@ class ArtifactStore(Protocol):
 
 
 class SubmissionView(Protocol):
-    document: Document
-    version: DocumentVersion
-    job: IngestionJob
+    @property
+    def document(self) -> Document: ...
+
+    @property
+    def version(self) -> DocumentVersion: ...
+
+    @property
+    def job(self) -> IngestionJob: ...
 
 
 class MetadataRepository(Protocol):
