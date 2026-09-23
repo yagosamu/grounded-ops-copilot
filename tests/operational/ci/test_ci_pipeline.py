@@ -35,6 +35,7 @@ REQUIRED_GATES = {
     "migrations",
     "secrets",
     "security",
+    "container",
 }
 
 

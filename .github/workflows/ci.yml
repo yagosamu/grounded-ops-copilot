@@ -97,10 +97,18 @@ jobs:
         with:
           go-version: '1.27.0'
           cache: false
+      - name: Set up Buildx for OCI attestations
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+        with:
+          version: v0.33.0
+          driver: docker-container
+          driver-opts: image=moby/buildkit:v0.29.0@sha256:0039c1d47e8748b5afea56f4e85f14febaf34452bd99d9552d2daa82262b5cc5
       - name: Install pinned security scanners
         env:
           GITLEAKS_VERSION: 8.30.0
           GITLEAKS_SHA256: 79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+          TRIVY_VERSION: 0.70.0
+          TRIVY_SHA256: 8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9
         run: |
           archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl --fail --silent --show-error --location \
@@ -111,6 +119,13 @@ jobs:
           sudo install --mode 0755 /tmp/gitleaks /usr/local/bin/gitleaks
           go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.6.0
           uv tool install semgrep==1.177.0
+          trivy_archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl --fail --silent --show-error --location \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${trivy_archive}" \
+            --output "/tmp/${trivy_archive}"
+          echo "${TRIVY_SHA256}  /tmp/${trivy_archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "/tmp/${trivy_archive}" --directory /tmp trivy
+          sudo install --mode 0755 /tmp/trivy /usr/local/bin/trivy
           mkdir -p security-reports
       - name: Detect committed secrets
         id: secrets
@@ -134,6 +149,29 @@ jobs:
           test "${scanner_status}" -le 1
           uv run python scripts/security_policy.py \
             security-reports/osv.sarif --minimum-score 7.0
+      - name: Build, attest and scan the immutable API image
+        id: container-scan
+        env:
+          IMAGE_REVISION: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --target api \
+            --build-arg "VCS_REF=${IMAGE_REVISION}" \
+            --attest type=sbom,generator=docker/buildkit-syft-scanner:stable-1@sha256:ae4f3b554449e7e25548e7d8ccc029d17357348e30c6e3df01b92bc93654d6a9 \
+            --attest type=provenance,mode=max \
+            --output type=oci,dest=security-reports/grounded-ops-api.oci.tar \
+            .
+          oci_layout="${RUNNER_TEMP}/grounded-ops-api"
+          mkdir -p "${oci_layout}"
+          tar -xf security-reports/grounded-ops-api.oci.tar -C "${oci_layout}"
+          trivy image \
+            --input "${oci_layout}" \
+            --scanners vuln,secret \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format sarif \
+            --output security-reports/trivy-image.sarif
       - name: Upload immutable security evidence
         id: security-artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

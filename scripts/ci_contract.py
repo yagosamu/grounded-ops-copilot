@@ -114,7 +114,19 @@ def validate_pipeline(
         str(step.get("run", ""))
         for step in _steps(_mapping(jobs["security"], "security"), "security").values()
     )
-    for scanner in ("gitleaks", "semgrep", "osv-scanner", "security_policy.py"):
+    for scanner in (
+        "gitleaks",
+        "semgrep",
+        "osv-scanner",
+        "security_policy.py",
+        "trivy image",
+        'oci_layout="${RUNNER_TEMP}/grounded-ops-api"',
+        "tar -xf security-reports/grounded-ops-api.oci.tar",
+        '--input "${oci_layout}"',
+        "--attest type=sbom",
+        "docker/buildkit-syft-scanner:stable-1@sha256:ae4f3b554449e7e25548e7d8ccc029d17357348e30c6e3df01b92bc93654d6a9",
+        "--attest type=provenance",
+    ):
         if scanner not in security_commands:
             raise ValueError(f"security job is missing {scanner}")
 

@@ -1340,22 +1340,50 @@ The user confirmed that the rerun for commit `80d41be` passed on GitHub, closing
 the cross-platform validation loop. Repository-side branch protection remains
 pending and must separately require `release / required` before merges to `main`.
 
-### T50: Build immutable deployment artifacts
+### T50: Build the immutable API runtime image [x]
 
-**What**: Produce least-privilege API and worker images with SBOM, provenance and vulnerability scan.
-**Where**: `Dockerfile`
+**What**: Build a least-privilege API image from locked production dependencies; generate SBOM and provenance and block high/critical vulnerabilities.
+**Where**: `Dockerfile`, `.dockerignore`, container CI gate.
 **Depends on**: T49
 **Requirement**: REL-01
-**Done when**: images run as non-root, contain no development secrets, have pinned base digest and pass high/critical scan policy.
-**Tests**: container structure and startup tests.
+**Done when**: the API image runs as non-root with a pinned base digest, no development dependencies or secrets, passes startup checks and has attached SBOM/provenance plus a clean high/critical scan.
+**Tests**: build and startup under a read-only filesystem, non-root identity, dev dependency exclusion and container vulnerability scan.
 **Gate**: Release.
-**Commit**: `build(container): create hardened runtime images`
+**Commit**: `build(container): add hardened API runtime image`
+
+**Evidence**: `make release-check BASE=origin/main` passed with 370 tests,
+90.67% total coverage, 121 release-marker tests and zero secrets. The dedicated
+container test passed with the image running as UID/GID 10001 on a read-only
+filesystem, with healthcheck responding and development tools absent. BuildKit
+exported an OCI image with SBOM and max-mode provenance; Trivy scanned the extracted
+OCI layout and reported zero HIGH/CRITICAL vulnerabilities and zero secrets. The
+image uses a digest-pinned Python 3.13 Alpine base and locked production dependencies.
+The Alpine/musl trade-off was checked by building and starting the app with its
+native wheels, rather than assuming Debian-built artifacts would be compatible.
+Adequacy A-D: PASS; the scan is blocking in CI and no findings were suppressed.
+
+**Architecture adjustment**: the repository has a durable ingestion pipeline but no
+executable worker entrypoint or queue consumer. T50 therefore ships the API image;
+T50B adds and verifies a real worker before the Pilot is provisioned. API and worker
+will use the same image digest with different commands, avoiding version drift while
+not publishing an image that cannot process work.
+
+### T50B: Add the executable ingestion worker
+
+**What**: Connect ingestion submission, queue delivery and the existing bounded pipeline to a separately runnable worker process.
+**Where**: `src/grounded_ops/worker.py`, queue adapter, local Compose and integration tests.
+**Depends on**: T13, T50
+**Requirement**: ING-01, ING-02, OPS-01
+**Done when**: delivery is safe under retries and duplicate messages, each invocation persists a bounded result, shutdown is graceful, and a failed worker cannot strand work without a recovery path.
+**Tests**: real queue/database integration, duplicate delivery, retry/resume, worker interruption and shutdown.
+**Gate**: Release.
+**Commit**: `feat(worker): process durable ingestion jobs`
 
 ### T51: Provision the AWS Pilot environment
 
 **What**: Define the Terraform-managed AWS Pilot profile with ECS Fargate, RDS PostgreSQL, S3, reduced Amazon OpenSearch Service, load balancing, secrets and telemetry.
 **Where**: `infra/staging/`
-**Depends on**: T50
+**Depends on**: T50B
 **Requirement**: OPS-01, REL-01
 **Done when**: plan is repeatable, least-privilege checks pass, no secret appears in state or logs and the environment can be created and destroyed from documented commands.
 **Tests**: infrastructure validation, policy and deployment smoke tests.
@@ -1463,7 +1491,7 @@ pending and must separately require `release / required` before merges to `main`
 | 5 | Fase 4 | T33 depends on T32 | Pass |
 | 6 | Fase 5 | T38 depends on T37 | Pass |
 | 7 | Fase 6 | T44 depends on T43 | Pass |
-| 8 | Fase 7 | T49 depends on T48 | Pass |
+| 8 | Fase 8 | T49 depends on T48; T50 depends on T49; T50B depends on T13 and T50; T51 depends on T50B | Pass |
 
 ## Test Co-location Validation
 
@@ -1477,7 +1505,7 @@ pending and must separately require `release / required` before merges to `main`
 | T33-T37 | auth, policy and security | API, integration and adversarial E2E | tests inside each task | Pass |
 | T38-T43 | routing and agent workflow | unit, integration and agentic eval | tests inside each task | Pass |
 | T44-T48 | telemetry, resilience and performance | integration, load and operational | tests inside each task | Pass |
-| T49-T56 | CI, deployment, recovery and UI | discrimination, operational and E2E | tests inside each task | Pass |
+| T49-T56 | CI, container/worker runtime, deployment, recovery and UI | discrimination, image/worker integration, operational and E2E | tests inside each task | Pass |
 
 ## Decisions Required Before Execution
 

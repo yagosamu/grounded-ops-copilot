@@ -16,6 +16,7 @@ dependencies = [
     "pyjwt[crypto]>=2.10,<3",
     "pyyaml>=6.0.3",
     "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.35,<1.0.0",
 ]
 
 [dependency-groups]
@@ -43,7 +44,6 @@ packages = [
     "src/adapters",
     "src/modules",
     "src/observability",
-    "evals",
 ]
 
 [tool.ruff]
@@ -60,6 +60,7 @@ files = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
+pythonpath = ["src", "."]
 markers = [
     "unit: isolated behavior tests",
     "integration: tests requiring local infrastructure",

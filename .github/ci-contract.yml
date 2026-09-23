@@ -22,6 +22,9 @@ gates:
   security:
     job: security
     step: static-analysis
+  container:
+    job: security
+    step: container-scan
 reports:
   - evals/agentic/reports/agentic-v1.json
   - evals/answering/reports/answering-v1.json
