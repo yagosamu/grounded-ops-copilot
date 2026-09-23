@@ -1335,7 +1335,10 @@ to the LF bytes stored by Git. Regression tests cover all seven reports and both
 hash-validation paths. The corrected local `make release-check` passed with 368
 tests, 90.67% total coverage, zero secrets and 120 release-marker tests. Adequacy
 A-D: PASS under `CONSTRAINTS.md`; no gate is non-blocking and no scanner rule was
-suppressed. A clean remote rerun is required after push.
+suppressed. At this point, the final remote rerun was still pending.
+The user confirmed that the rerun for commit `80d41be` passed on GitHub, closing
+the cross-platform validation loop. Repository-side branch protection remains
+pending and must separately require `release / required` before merges to `main`.
 
 ### T50: Build immutable deployment artifacts
 
