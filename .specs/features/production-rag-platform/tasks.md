@@ -1487,16 +1487,25 @@ images, secret references, resource-scoped IAM and invalid image rejection
 plus 137 selected API, integration, evaluation and security tests. No real AWS
 plan, apply or deployment smoke has run; those remain T54B evidence.
 
-### T51B: Define the AWS Production HA profile
+### T51B: Define the AWS Production HA profile [x]
 
-**What**: Extend the Terraform modules with multi-AZ ECS, RDS Multi-AZ, OpenSearch Multi-AZ with Standby, managed queueing, WAF, backups and recovery controls.
+**What**: Define a separate Terraform root with multi-AZ ECS, RDS Multi-AZ, OpenSearch Multi-AZ with Standby, managed queueing, WAF, backups and recovery controls. Keep the application contract shared with Pilot; do not imply an in-place upgrade.
 **Where**: `infra/production/`
 **Depends on**: T51
 **Requirement**: OPS-01, OPS-02, REL-01
 **Done when**: Terraform validation and policy tests prove that production redundancy, encryption, private networking, backup and least-privilege requirements are represented without requiring the profile to remain continuously deployed.
 **Tests**: infrastructure validation, security policy and plan assertions.
 **Gate**: Release.
-**Commit**: `infra(production): define high-availability profile`
+**Commit**: `build(production): define high-availability profile`
+
+**Evidence (2026-10-06)**: Terraform 1.13.3 format and validation passed;
+mock-provider tests passed 3/3 for three-zone networking, RDS and OpenSearch
+redundancy, encryption, versioned artifacts, SQS/DLQ, WAF, alarms, task
+isolation, scoped IAM and immutable images. The Release gate passed 401 tests,
+90.43% total coverage, 100% diff coverage across 22 Python lines, Gitleaks and
+floor guard, plus 138 selected API, integration, evaluation and security tests.
+The profile is only an offline definition: no live AWS plan, deployment,
+restoration or availability test has run.
 
 ### T52: Implement blue-green index rebuild and rollback
 

@@ -118,7 +118,11 @@ latency or cost reduction.
 - `opensearch`: retrieval indexes behind versioned aliases.
 - `telemetry`: OpenTelemetry-compatible collection and dashboards.
 
-Production HA is a target profile, not an always-on development expense. The Pilot profile must remain upgradable through Terraform without changing module interfaces.
+Production HA is a target profile, not an always-on development expense. Pilot
+and Production HA are separate Terraform roots with the same application
+contract; moving between them is a migration, not an in-place upgrade. This
+duplicates some infrastructure code but prevents the low-cost Pilot from
+silently acquiring Production HA capacity.
 
 ## Risks and Mitigations
 

@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 8, T51 complete; T51B is next.
-- **Completed**: T01-T51, including fail-closed CI, the durable worker, Search/Ask API and offline-tested AWS Pilot IaC.
-- **In-progress**: none; no AWS resource exists.
-- **Next step**: T51B defines the Production HA profile without deploying it. T54B will run the only approved, time-boxed AWS Pilot after the UI, with smoke, recovery and destruction evidence.
-- **Blockers**: None for offline T51. AWS CLI, a no-domain HTTPS entry point, JWT issuer, cost review and explicit authorization are required before T54B. No AWS resource exists.
-- **Uncommitted files**: none after the T51 commit; `progress.md` remains ignored and local.
-- **Branch**: `main`; no push performed.
+- **Phase / Task**: Phase 8, T51B complete; T52 next.
+- **Completed**: T01-T51B and CI repair commit `7f4be7f` (digest-pinned local Silo image). T51B added an offline Production HA Terraform root, keyless SQS worker broker, two-replica search layout, alerts and runbook. Terraform mock tests passed 3/3; Release passed 401 tests, 90.43% coverage, 100% Python diff coverage, Gitleaks, floor guard and 138 selected tests.
+- **In-progress**: No task in progress. No AWS resource was created; the live Pilot remains T54B, after T54.
+- **Next step**: Run explicit `make pre-push BASE=origin/main`, then hand both local commits to the owner for push and GitHub Actions verification. Start T52 blue-green index rebuild afterward.
+- **Blockers**: None for T52. A no-domain HTTPS entry point, JWT issuer, current cost review and explicit authorization remain prerequisites for T54B. Terraform tests do not prove live availability or recovery.
+- **Uncommitted files**: `progress.md` remains ignored and local.
+- **Branch**: `main`, with the CI repair and T51B commits pending user push; no push performed by the agent.

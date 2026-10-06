@@ -2,7 +2,7 @@
 
 import argparse
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -45,10 +45,35 @@ if TYPE_CHECKING:
 MAX_DELIVERIES = 3
 CHUNK_MAX_TOKENS = 80
 
-celery_app = Celery(
-    "grounded_ops",
-    broker=os.getenv("REDIS_URL", "redis://redis:6379/0"),
-)
+
+def _configure_broker(app: Celery, environment: Mapping[str, str]) -> None:
+    queue_url = environment.get("SQS_QUEUE_URL", "")
+    queue_name = environment.get("SQS_QUEUE_NAME", "")
+    if queue_url or queue_name:
+        region = environment.get("AWS_REGION", "")
+        if not queue_url or not queue_name or not region:
+            raise ValueError(
+                "SQS broker requires SQS_QUEUE_URL, SQS_QUEUE_NAME and AWS_REGION"
+            )
+        app.conf.update(
+            broker_url="sqs://",
+            task_default_queue=queue_name,
+            broker_transport_options={
+                "region": region,
+                "predefined_queues": {queue_name: {"url": queue_url}},
+                "wait_time_seconds": 10,
+            },
+        )
+        return
+    app.conf.update(
+        broker_url=environment.get("REDIS_URL", "redis://redis:6379/0"),
+        task_default_queue="celery",
+        broker_transport_options={"visibility_timeout": 180},
+    )
+
+
+celery_app = Celery("grounded_ops")
+_configure_broker(celery_app, os.environ)
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
@@ -58,7 +83,6 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
     task_time_limit=120,
-    broker_transport_options={"visibility_timeout": 180},
     beat_schedule={
         "recover-ingestion": {
             "task": "grounded_ops.recover_ingestion",
@@ -117,7 +141,9 @@ class OpenSearchPreparationSink:
             ),
         )
         try:
-            schema = LexicalIndexSchema(self.client)
+            schema = LexicalIndexSchema(
+                self.client, replicas=int(os.getenv("OPENSEARCH_REPLICAS", "1"))
+            )
             schema.ensure("1")
             OpenSearchIndexWriter(
                 self.client, schema.write_alias, PolicyEnforcer(self.repository)

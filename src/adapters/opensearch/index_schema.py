@@ -12,9 +12,14 @@ class IncompatibleIndexError(RuntimeError):
 
 
 class LexicalIndexSchema:
-    def __init__(self, client: OpenSearch, prefix: str = "groundedops-lexical") -> None:
+    def __init__(
+        self, client: OpenSearch, prefix: str = "groundedops-lexical", replicas: int = 1
+    ) -> None:
+        if replicas < 0:
+            raise ValueError("replicas must not be negative")
         self.client = client
         self.prefix = prefix
+        self.replicas = replicas
         self.read_alias = f"{prefix}-read"
         self.write_alias = f"{prefix}-write"
 
@@ -50,7 +55,7 @@ class LexicalIndexSchema:
         return index
 
     def _definition(self, schema_version: str) -> dict[str, Any]:
-        return {
+        definition: dict[str, Any] = {
             "settings": {
                 "analysis": {
                     "analyzer": {
@@ -60,7 +65,7 @@ class LexicalIndexSchema:
                             "filter": ["lowercase"],
                         }
                     }
-                }
+                },
             },
             "mappings": {
                 "dynamic": "strict",
@@ -87,6 +92,9 @@ class LexicalIndexSchema:
                 self.write_alias: {"is_write_index": True},
             },
         }
+        if self.replicas != 1:
+            definition["settings"]["number_of_replicas"] = self.replicas
+        return definition
 
     @staticmethod
     def _fingerprint(definition: dict[str, Any]) -> str:
