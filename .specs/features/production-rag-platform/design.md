@@ -124,6 +124,14 @@ contract; moving between them is a migration, not an in-place upgrade. This
 duplicates some infrastructure code but prevents the low-cost Pilot from
 silently acquiring Production HA capacity.
 
+Blue-green index maintenance keeps the previous physical index and both active
+aliases intact while a candidate is built. Ingestion writes must be paused for
+the maintenance window; reads continue on the previous index. A caller supplies
+authoritative replay and validation, and only a validated candidate receives
+the aliases in one guarded OpenSearch operation. T53 will exercise the full
+PostgreSQL/object-storage replay and measure recovery, so T52 alone does not
+claim a complete restore path.
+
 ## Risks and Mitigations
 
 | Concern | Impact | Mitigation |

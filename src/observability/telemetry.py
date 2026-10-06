@@ -29,6 +29,7 @@ class TelemetryComponent(StrEnum):
     RETRIEVAL = "retrieval"
     GENERATION = "generation"
     AGENT = "agent"
+    INDEXING = "indexing"
 
 
 class TelemetryOperation(StrEnum):
@@ -39,6 +40,8 @@ class TelemetryOperation(StrEnum):
     GENERATION_REQUEST = "generation.request"
     INVESTIGATION_RUN = "investigation.run"
     INVESTIGATION_STEP = "investigation.step"
+    INDEX_REBUILD = "index.rebuild"
+    INDEX_ROLLBACK = "index.rollback"
 
 
 class TelemetryOutcome(StrEnum):

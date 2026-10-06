@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 8, T51B complete; T52 next.
-- **Completed**: T01-T51B and CI repair commit `7f4be7f` (digest-pinned local Silo image). T51B added an offline Production HA Terraform root, keyless SQS worker broker, two-replica search layout, alerts and runbook. Terraform mock tests passed 3/3; Release passed 401 tests, 90.43% coverage, 100% Python diff coverage, Gitleaks, floor guard and 138 selected tests.
+- **Phase / Task**: Phase 8, T52 complete; T53 next.
+- **Completed**: T01-T52. T52 added guarded blue-green alias promotion, explicit and compensating rollback, and allowlisted rebuild/rollback telemetry. Six local OpenSearch failure-injection tests passed; Operational passed 34 tests and `make check` passed 235 unit tests.
 - **In-progress**: No task in progress. No AWS resource was created; the live Pilot remains T54B, after T54.
-- **Next step**: Run explicit `make pre-push BASE=origin/main`, then hand both local commits to the owner for push and GitHub Actions verification. Start T52 blue-green index rebuild afterward.
-- **Blockers**: None for T52. A no-domain HTTPS entry point, JWT issuer, current cost review and explicit authorization remain prerequisites for T54B. Terraform tests do not prove live availability or recovery.
+- **Next step**: Run explicit `make pre-push BASE=origin/main`, hand the T52 commit to the owner for push, then build T53 authoritative replay and measured restore.
+- **Blockers**: None for T53. A no-domain HTTPS entry point, JWT issuer, current cost review and explicit authorization remain prerequisites for T54B. T52 does not yet replay PostgreSQL/object-storage artifacts end to end.
 - **Uncommitted files**: `progress.md` remains ignored and local.
-- **Branch**: `main`, with the CI repair and T51B commits pending user push; no push performed by the agent.
+- **Branch**: `main`; the owner pushed through T51B, and the T52 commit remains local until user push. No push performed by the agent.

@@ -11,6 +11,10 @@ class IncompatibleIndexError(RuntimeError):
     """The requested physical index name already has a different schema."""
 
 
+class IndexAliasError(RuntimeError):
+    """The read and write aliases cannot safely be moved."""
+
+
 class LexicalIndexSchema:
     def __init__(
         self, client: OpenSearch, prefix: str = "groundedops-lexical", replicas: int = 1
@@ -53,6 +57,72 @@ class LexicalIndexSchema:
             return index
         self.client.indices.create(index=index, body=definition)
         return index
+
+    def create_candidate(self, schema_version: str) -> str:
+        index = self.index_name(schema_version)
+        if self.client.indices.exists(index=index):
+            raise IncompatibleIndexError("candidate index already exists")
+        definition = self._definition(schema_version)
+        definition["mappings"]["_meta"] = {
+            "schema_version": schema_version,
+            "schema_fingerprint": self._fingerprint(definition),
+        }
+        del definition["aliases"]
+        self.client.indices.create(index=index, body=definition)
+        return index
+
+    def active_index(self) -> str:
+        read = cast(dict[str, Any], self.client.indices.get_alias(name=self.read_alias))
+        write = cast(
+            dict[str, Any], self.client.indices.get_alias(name=self.write_alias)
+        )
+        if len(read) != 1 or set(read) != set(write):
+            raise IndexAliasError("read and write aliases disagree")
+        index = next(iter(read))
+        if write[index]["aliases"][self.write_alias].get("is_write_index") is not True:
+            raise IndexAliasError("write alias has no active index")
+        return index
+
+    def switch_aliases(self, expected_index: str, target_index: str) -> None:
+        if self.active_index() != expected_index:
+            raise IndexAliasError("active index changed during rebuild")
+        if not self.client.indices.exists(index=target_index):
+            raise IndexAliasError("target index is unavailable")
+        response = cast(
+            dict[str, Any],
+            self.client.indices.update_aliases(
+                body={
+                    "actions": [
+                        {
+                            "remove": {
+                                "index": expected_index,
+                                "alias": self.read_alias,
+                                "must_exist": True,
+                            }
+                        },
+                        {
+                            "remove": {
+                                "index": expected_index,
+                                "alias": self.write_alias,
+                                "must_exist": True,
+                            }
+                        },
+                        {"add": {"index": target_index, "alias": self.read_alias}},
+                        {
+                            "add": {
+                                "index": target_index,
+                                "alias": self.write_alias,
+                                "is_write_index": True,
+                            }
+                        },
+                    ]
+                }
+            ),
+        )
+        if not response.get("acknowledged"):
+            raise IndexAliasError("alias switch was not acknowledged")
+        if self.active_index() != target_index:
+            raise IndexAliasError("alias switch did not converge")
 
     def _definition(self, schema_version: str) -> dict[str, Any]:
         definition: dict[str, Any] = {

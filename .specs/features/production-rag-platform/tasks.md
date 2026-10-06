@@ -1507,7 +1507,7 @@ floor guard, plus 138 selected API, integration, evaluation and security tests.
 The profile is only an offline definition: no live AWS plan, deployment,
 restoration or availability test has run.
 
-### T52: Implement blue-green index rebuild and rollback
+### T52: Implement blue-green index rebuild and rollback [x]
 
 **What**: Rebuild into a new index, validate it, atomically switch aliases and roll back on failure.
 **Where**: `src/modules/indexing/rebuild.py`
@@ -1517,6 +1517,16 @@ restoration or availability test has run.
 **Tests**: staging integration and failure-injection tests.
 **Gate**: Operational.
 **Commit**: `feat(indexing): add validated blue-green rebuild`
+
+**Evidence (2026-10-06)**: Six integration/failure-injection tests against
+local OpenSearch prove validated promotion of both aliases, unchanged live
+index on rejected validation or interrupted build, explicit rollback, rejection
+of stale rollback and compensation after a lost alias acknowledgment
+(`tests/integration/test_index_rebuild.py:39-246`). The Operational gate passed
+34 tests; `make check` passed formatting, lint, MyPy and 235 unit tests. The
+rebuild accepts caller-supplied replay and validation while ingestion is
+paused. Full replay from PostgreSQL/object storage and measured RPO/RTO remain
+T53; no AWS resource was used.
 
 ### T53: Test backup and disaster recovery
 
