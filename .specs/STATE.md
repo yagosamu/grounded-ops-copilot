@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 8 in progress; T50D is complete.
-- **Completed**: T01-T50D, including fail-closed CI, the durable worker, IAM-backed Pilot worker clients and the executable Search/Ask API.
-- **In-progress**: none.
-- **Next step**: T51, define the AWS Pilot Terraform profile and a cost estimate before any provisioning.
-- **Blockers**: None for local work. Pilot defaults to `us-east-1` for short-lived test windows; estimate and explicit authorization are required before AWS provisioning.
-- **Uncommitted files**: none after the T50D atomic commit; `progress.md` remains ignored and local.
+- **Phase / Task**: Phase 8, T51 complete; T51B is next.
+- **Completed**: T01-T51, including fail-closed CI, the durable worker, Search/Ask API and offline-tested AWS Pilot IaC.
+- **In-progress**: none; no AWS resource exists.
+- **Next step**: T51B defines the Production HA profile without deploying it. T54B will run the only approved, time-boxed AWS Pilot after the UI, with smoke, recovery and destruction evidence.
+- **Blockers**: None for offline T51. AWS CLI, a no-domain HTTPS entry point, JWT issuer, cost review and explicit authorization are required before T54B. No AWS resource exists.
+- **Uncommitted files**: none after the T51 commit; `progress.md` remains ignored and local.
 - **Branch**: `main`; no push performed.

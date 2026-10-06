@@ -31,7 +31,7 @@ No `git push` is part of a task. The agent creates the local atomic commit after
 - S3-compatible object storage for immutable document artifacts.
 - OpenSearch for BM25, vector, filtering and hybrid retrieval.
 - Pytest, pytest-cov, Ruff and MyPy.
-- Docker Compose locally; AWS provisioned with Terraform using economical Pilot and multi-AZ Production HA profiles.
+- Docker Compose locally; AWS defined with Terraform using economical Pilot and multi-AZ Production HA profiles. One approved, time-boxed Pilot deployment follows the local build and tests.
 - OpenTelemetry-compatible traces, metrics and structured logs.
 
 These decisions are confirmed and recorded in `.specs/STATE.md` and `context.md`.
@@ -1468,16 +1468,24 @@ only health routes, and PostgreSQL/OpenSearch probe failures returned readiness
 without credentials (`test_container_runtime.py`). No test was skipped,
 removed or weakened. Adequacy A-D: PASS.
 
-### T51: Provision the AWS Pilot environment
+### T51: Define and validate the AWS Pilot environment offline [x]
 
-**What**: Define the Terraform-managed AWS Pilot profile with ECS Fargate, RDS PostgreSQL, S3, reduced Amazon OpenSearch Service, load balancing, secrets and telemetry.
+**What**: Define the Terraform-managed AWS Pilot profile with ECS Fargate, RDS PostgreSQL, S3, reduced Amazon OpenSearch Service, load balancing, secrets and telemetry. Keep real deployment for T54B.
 **Where**: `infra/staging/`
 **Depends on**: T50D
 **Requirement**: OPS-01, REL-01
-**Done when**: plan is repeatable, least-privilege checks pass, no secret appears in state or logs and the environment can be created and destroyed from documented commands.
-**Tests**: infrastructure validation, policy and deployment smoke tests.
+**Done when**: offline Terraform validation and mock-provider plan assertions pass, least-privilege and secret-handling policies are tested, and documented commands cover later creation and destruction. Real AWS behavior remains explicitly unverified until T54B.
+**Tests**: Terraform format, validation, mock-provider and policy tests; Release gate. Real deployment smoke belongs to T54B.
 **Gate**: Release.
-**Commit**: `infra(staging): provision production-like environment`
+**Commit**: `build(staging): define production-like pilot environment`
+
+**Evidence (2026-10-06)**: Terraform format and validation passed. Mock-provider
+tests passed 3/3 scenarios covering private data stores and tasks, immutable
+images, secret references, resource-scoped IAM and invalid image rejection
+(`infra/staging/tests/pilot.tftest.hcl:58-125`). Gitleaks found no secrets in
+`infra/staging/`. The Release gate passed 393 tests with 90.38% total coverage,
+plus 137 selected API, integration, evaluation and security tests. No real AWS
+plan, apply or deployment smoke has run; those remain T54B evidence.
 
 ### T51B: Define the AWS Production HA profile
 
@@ -1523,11 +1531,22 @@ removed or weakened. Adequacy A-D: PASS.
 **Gate**: Release.
 **Commit**: `feat(web): add evidence-first production interface`
 
+### T54B: Run the single time-boxed AWS Pilot validation
+
+**What**: Resolve the no-domain HTTPS entry point, then after explicit cost and deployment approval create the Pilot once, execute authenticated Search/Ask and operational smoke tests, capture latency and recovery evidence, then destroy billable resources at the agreed time.
+**Where**: `infra/staging/` and `ops/`
+**Depends on**: T54
+**Requirement**: OPS-01, OPS-02, REL-01
+**Done when**: a reviewed real plan and cost estimate precede apply; the deployed system passes security, readiness, API and recovery checks; measurements and screenshots are saved; destroy and residual-resource checks are recorded. Local-only evidence never substitutes for this task.
+**Tests**: AWS deployment smoke, tenant-isolation check, recovery exercise and post-destroy resource audit.
+**Gate**: Operational.
+**Commit**: `ops(pilot): verify short-lived AWS deployment`
+
 ### T55: Publish operational and portfolio documentation
 
 **What**: Document setup, architecture, threat assumptions, experiments, costs, limitations, runbooks and demo flow.
 **Where**: `README.md`
-**Depends on**: T54
+**Depends on**: T54B
 **Requirement**: FND-01, REL-01
 **Done when**: every command is executed from the document, every metric links to an artifact and no unsupported production claim remains.
 **Tests**: documentation command smoke test and link checker.
@@ -1580,7 +1599,7 @@ removed or weakened. Adequacy A-D: PASS.
 | 5 | Fase 4 | T33 depends on T32 | Pass |
 | 6 | Fase 5 | T38 depends on T37 | Pass |
 | 7 | Fase 6 | T44 depends on T43 | Pass |
-| 8 | Fase 8 | T49 depends on T48; T50 depends on T49; T50B depends on T13 and T50; T50C depends on T50B; T50D depends on T50C; T51 depends on T50D | Pass |
+| 8 | Fase 8 | T49 depends on T48; T50 depends on T49; T50B depends on T13 and T50; T50C depends on T50B; T50D depends on T50C; T51 depends on T50D; T54B depends on T54; T55 depends on T54B | Pass |
 
 ## Test Co-location Validation
 
@@ -1594,7 +1613,7 @@ removed or weakened. Adequacy A-D: PASS.
 | T33-T37 | auth, policy and security | API, integration and adversarial E2E | tests inside each task | Pass |
 | T38-T43 | routing and agent workflow | unit, integration and agentic eval | tests inside each task | Pass |
 | T44-T48 | telemetry, resilience and performance | integration, load and operational | tests inside each task | Pass |
-| T49-T56 | CI, container/worker runtime, deployment, recovery and UI | discrimination, image/worker integration, operational and E2E | tests inside each task | Pass |
+| T49-T56, T54B | CI, container/worker runtime, deployment, recovery and UI | discrimination, image/worker integration, operational and E2E | tests inside each task | Pass |
 
 ## Decisions Required Before Execution
 
