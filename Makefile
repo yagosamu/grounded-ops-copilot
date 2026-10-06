@@ -9,11 +9,11 @@ check:
 	uv run ruff format --check .
 	uv run ruff check .
 	uv run mypy src
-	uv run pytest -m unit
+	uv run python -m pytest -m unit
 
 test: check
 	uv run python scripts/clean_coverage.py
-	uv run pytest --cov --cov-branch --cov-report=xml --cov-fail-under=80
+	uv run python -m pytest --cov --cov-branch --cov-report=xml --cov-fail-under=80
 
 pre-push: test
 	uv run diff-cover coverage.xml --compare-branch=$(BASE) --fail-under=80
