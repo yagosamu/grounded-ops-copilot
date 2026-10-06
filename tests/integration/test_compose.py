@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytestmark = pytest.mark.integration
 
@@ -37,3 +38,16 @@ def test_example_environment_has_no_real_local_values() -> None:
 
     assert "replace-with-a-local-password" in example
     assert "replace-with-a-local-user" in example
+
+
+def test_local_and_ci_object_store_use_the_same_pinned_public_image() -> None:
+    local = yaml.safe_load(Path("compose.yml").read_text(encoding="utf-8"))
+    ci = yaml.safe_load(
+        Path("tests/integration/compose.yml").read_text(encoding="utf-8")
+    )
+
+    image = ci["services"]["minio"]["image"]
+    assert image.startswith("pgsty/silo:RELEASE.")
+    assert "@sha256:" in image
+    assert local["services"]["minio"]["image"] == image
+    assert local["services"]["minio-init"]["image"] == image
