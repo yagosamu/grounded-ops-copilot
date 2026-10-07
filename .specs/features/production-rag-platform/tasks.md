@@ -1551,7 +1551,7 @@ artifact rejection, an empty completed document and a local-only dependency
 guard. The Operational gate passed 39 tests. This is local evidence, not proof of AWS RDS/S3 recovery;
 the live Pilot exercise remains T54B.
 
-### T54: Create the minimal production UI
+### T54: Create the minimal production UI [x]
 
 **What**: Provide authenticated `Ask`, evidence inspection, investigation status and feedback flows.
 **Where**: `web/`
@@ -1561,6 +1561,16 @@ the live Pilot exercise remains T54B.
 **Tests**: frontend unit, accessibility and browser E2E tests.
 **Gate**: Release.
 **Commit**: `feat(web): add evidence-first production interface`
+
+**Evidence (2026-10-07)**: The local Next.js interface provides JWT-backed
+HttpOnly sessions, streaming Ask with unverified drafts separated from verified
+answers, citation navigation and authorized evidence inspection, investigation
+status lookup by ID, and persisted authenticated feedback. New agent runs remain
+disabled in the current runtime. The Release gate passed 417 Python tests
+(90.30% total coverage, 97% changed-line coverage), 8 web unit tests and 8
+browser E2E tests. Axe found zero critical/serious violations; Lighthouse on
+the initial preview measured LCP 2.129 seconds and CLS 0.000. The UI was not
+deployed to AWS; that remains T54B and requires explicit cost approval.
 
 ### T54B: Run the single time-boxed AWS Pilot validation
 

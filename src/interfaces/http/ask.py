@@ -291,6 +291,7 @@ def _final_answer(answer: GroundedAnswer, evidence_set: EvidenceSet) -> AskEvent
         {
             "type": "final",
             "status": answer.status.value,
+            "answer_id": answer.question.id,
             "answer": " ".join(claim.text for claim in answer.claims),
             "claims": _claims(answer),
             "sources": _sources(answer, evidence_set),

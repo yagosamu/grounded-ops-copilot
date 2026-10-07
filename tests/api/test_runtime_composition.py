@@ -37,6 +37,8 @@ def test_unconfigured_container_keeps_liveness_but_exposes_no_protected_routes(
             == 404
         )
         assert client.post("/v1/ask", json={"question": "tracing"}).status_code == 404
+        assert client.get("/v1/session").status_code == 404
+        assert client.post("/v1/feedback", json={}).status_code == 404
 
 
 def test_partial_configuration_does_not_expose_secret_or_routes(

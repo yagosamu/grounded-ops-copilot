@@ -166,6 +166,7 @@ def test_streams_unverified_delta_then_a_verified_final_answer(auth_context) -> 
     final = payloads[3]
     assert final["type"] == "final"
     assert final["status"] == "verified"
+    assert isinstance(final["answer_id"], str) and final["answer_id"]
     assert final["answer"] == "TracerProvider provides access to tracers."
     assert final["claims"][0]["citations"][0] == {
         "evidence_id": "chunk-1",

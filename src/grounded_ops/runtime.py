@@ -13,6 +13,7 @@ from sqlalchemy import URL, Engine, create_engine, text
 from adapters.opensearch.index_schema import LexicalIndexSchema
 from adapters.opensearch.search import OpenSearchBM25Adapter
 from adapters.postgres.audit_store import PostgresAuditStore
+from adapters.postgres.feedback_store import PostgresFeedbackStore
 from adapters.postgres.ingestion_repository import IngestionRepository
 from grounded_ops.app import create_app
 from interfaces.http.ask import AskService
@@ -223,6 +224,7 @@ def create_runtime_app(
         return create_app(
             retriever=retriever,
             ask_executor=ask,
+            feedback_store=PostgresFeedbackStore(engine, settings.audit_redaction_key),
             authenticator=authenticator,
             health_dependencies={
                 "postgres": lambda: _database_ready(engine),

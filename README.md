@@ -10,7 +10,8 @@ simpler baseline.
 
 ## Project status
 
-Planning is complete. Implementation has not started yet.
+The backend vertical slice and local evidence-first web preview are implemented.
+AWS Pilot deployment remains a separate, time-boxed validation task.
 
 The specification, architecture, task breakdown and quality contract are already
 versioned so that implementation decisions remain traceable:
@@ -49,7 +50,7 @@ It will support two intentionally separate paths:
 - Cost, latency and answer quality are evaluated together.
 - Every implementation task includes tests and an explicit quality gate.
 
-## Planned stack
+## Stack
 
 - Python 3.13, `uv`, FastAPI, Pydantic, SQLAlchemy and Alembic;
 - PostgreSQL, OpenSearch and S3-compatible object storage;
@@ -58,6 +59,22 @@ It will support two intentionally separate paths:
 - Pytest, Testcontainers, Ruff and MyPy for verification;
 - Next.js for the web client after the backend vertical slice;
 - Docker Compose locally and AWS with Terraform for deployment.
+
+## Local web preview
+
+The web client is in [`web/`](web/). Configure `API_BASE_URL` in a local
+`web/.env.local` (see `web/.env.example`), then run `npm ci --prefix web` and
+`npm --prefix web run dev`. The local API must have a configured JWT issuer and
+verification key; a valid API JWT is entered once in the session form and kept
+in a server-set HttpOnly cookie. No token belongs in source control or browser
+storage. The API validates authorization on every request.
+
+The runtime currently exposes Ask and evidence search. New investigations remain
+disabled until their benchmark gates and production composition are ready; the
+UI can inspect status by ID on runtimes that expose the investigation API.
+Feedback for verified answers is persisted without prompts, answer text or raw
+principal identifiers. Run `make web-check` for types, unit tests and build;
+`make web-e2e` adds browser, Axe and Lighthouse preview checks.
 
 ## Corpus
 
