@@ -1528,7 +1528,7 @@ rebuild accepts caller-supplied replay and validation while ingestion is
 paused. Full replay from PostgreSQL/object storage and measured RPO/RTO remain
 T53; no AWS resource was used.
 
-### T53: Test backup and disaster recovery
+### T53: Test backup and disaster recovery [x]
 
 **What**: Automate backup verification and a staging restore exercise for authoritative stores.
 **Where**: `ops/recovery/runbook.md`
@@ -1537,7 +1537,19 @@ T53; no AWS resource was used.
 **Done when**: a clean environment is restored, checksums match, indexes rebuild and measured RPO/RTO meet `CONSTRAINTS.md`.
 **Tests**: witnessed recovery exercise with machine-readable results.
 **Gate**: Operational.
-**Commit**: `ops(recovery): verify backup and restore procedure`
+**Commit**: `test(recovery): verify backup and restore procedure`
+
+**Evidence (2026-10-07)**: The isolated Compose exercise restores a PostgreSQL
+custom-format dump into a new database, copies SHA-256-verified objects through
+separate backup and restore buckets, compares checksums for every restored
+metadata table, and rebuilds a new OpenSearch index from the recovered
+artifacts before alias promotion. The machine-readable local report records
+zero observed data loss with writes paused and a measured 3.459-second RTO;
+both are below the initial 24-hour/4-hour targets. Five new real-adapter tests
+cover full restore, historical/current and cross-tenant replay, corrupted
+artifact rejection, an empty completed document and a local-only dependency
+guard. The Operational gate passed 39 tests. This is local evidence, not proof of AWS RDS/S3 recovery;
+the live Pilot exercise remains T54B.
 
 ### T54: Create the minimal production UI
 

@@ -1,0 +1,43 @@
+{
+  "artifact_checksums_match": true,
+  "artifact_sha256": {
+    "alpha/normalized/fbdcc88bf35cb41219b1a26d656d3f1dd36ecac95de59a2bfc84420438a2b9f6": "fbdcc88bf35cb41219b1a26d656d3f1dd36ecac95de59a2bfc84420438a2b9f6",
+    "alpha/raw/fbdcc88bf35cb41219b1a26d656d3f1dd36ecac95de59a2bfc84420438a2b9f6": "fbdcc88bf35cb41219b1a26d656d3f1dd36ecac95de59a2bfc84420438a2b9f6"
+  },
+  "database_backup_sha256": "ef524145f5e8a4493acff2c70d44956c4dcd02a4a80de5846cd0532f82b168dc",
+  "environment": "local-compose",
+  "limitations": [
+    "Writes were paused; zero RPO is observed data loss in this exercise, not a backup-frequency guarantee.",
+    "Local Compose restore does not validate AWS RDS snapshots or S3 disaster recovery."
+  ],
+  "metadata_checksums_match": true,
+  "metadata_table_sha256": {
+    "alembic_version": "d84856be9bd8bb977b66500e8a78e4fbfd503d6ab84cf4933b69ce460a16fe7d",
+    "audit_events": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "document_versions": "ba97eb1874e159697bb15341ebf4e2890f16cb7db38f4f52338c367d52665a1c",
+    "documents": "e0e0b07cc0eb6f88a98e69d192f7248c6150e9b75155c5fa992f98e63ce0149b",
+    "ingestion_jobs": "ba5fd45f00002aa543c48fee32c04ce77c775f1bd0bead5c809c9ca1eb1b34d7",
+    "investigations": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "quota_buckets": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sources": "49694d1e469df2e0b452d60eb4ef3176865adfdf46cfd6143c08ca6e7a4ffdfa"
+  },
+  "restored_chunks": 1,
+  "restored_documents": 1,
+  "restored_versions": 1,
+  "result": "pass",
+  "rpo_seconds": 0,
+  "rpo_target_seconds": 86400,
+  "rto_seconds": 3.459,
+  "rto_target_seconds": 14400,
+  "search_evidence": [
+    {
+      "document_version_id": "22ab096ad8cc41a0bea84ea7a059ec00",
+      "policy": [
+        "role:oncall"
+      ],
+      "tenant_id": "alpha",
+      "text_sha256": "fbdcc88bf35cb41219b1a26d656d3f1dd36ecac95de59a2bfc84420438a2b9f6"
+    }
+  ],
+  "witnessed_at_utc": "2026-10-07T11:59:27.562982+00:00"
+}

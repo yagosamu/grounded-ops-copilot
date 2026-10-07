@@ -20,10 +20,10 @@
 ## Handoff
 
 - **Feature**: GroundedOps production RAG platform.
-- **Phase / Task**: Phase 8, T52 complete; T53 next.
-- **Completed**: T01-T52. T52 added guarded blue-green alias promotion, explicit and compensating rollback, and allowlisted rebuild/rollback telemetry. Six local OpenSearch failure-injection tests passed; Operational passed 34 tests and `make check` passed 235 unit tests.
+- **Phase / Task**: Phase 8, T53 complete; T54 next.
+- **Completed**: T01-T53. T53 restored a clean local PostgreSQL database and object bucket, verified table/object checksums, replayed current and historical evidence into a new index and measured local RPO/RTO. Five new real-adapter tests passed; Operational passed 39 tests. The local report does not prove AWS recovery.
 - **In-progress**: No task in progress. No AWS resource was created; the live Pilot remains T54B, after T54.
-- **Next step**: Run explicit `make pre-push BASE=origin/main`, hand the T52 commit to the owner for push, then build T53 authoritative replay and measured restore.
-- **Blockers**: None for T53. A no-domain HTTPS entry point, JWT issuer, current cost review and explicit authorization remain prerequisites for T54B. T52 does not yet replay PostgreSQL/object-storage artifacts end to end.
+- **Next step**: Run explicit `make pre-push BASE=origin/main`, hand the T53 commit to the owner for push, then build T54 minimal production UI.
+- **Blockers**: None for T54. A no-domain HTTPS entry point, JWT issuer, current cost review and explicit authorization remain prerequisites for T54B.
 - **Uncommitted files**: `progress.md` remains ignored and local.
-- **Branch**: `main`; the owner pushed through T51B, and the T52 commit remains local until user push. No push performed by the agent.
+- **Branch**: `main`; the owner pushed through T52. No push performed by the agent.
