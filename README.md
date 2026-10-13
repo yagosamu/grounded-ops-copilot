@@ -1,3 +1,5 @@
+[Português (Brasil)](README.pt-BR.md)
+
 # GroundedOps
 
 **An evidence-first copilot for engineering knowledge and incident response.**

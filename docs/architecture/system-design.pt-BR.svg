@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800" role="img" aria-labelledby="title description">
+  <title id="title">Arquitetura do GroundedOps</title>
+  <desc id="description">Fontes técnicas versionadas são ingeridas por um worker assíncrono. PostgreSQL e armazenamento de objetos são autoritativos; OpenSearch é uma projeção BM25 reconstruível. Um cliente Next.js acessa a API FastAPI, que autoriza as requisições antes da recuperação. A geração delimitada produz um rascunho, e a verificação por afirmação retorna citações exatas ou se abstém. A investigação delimitada foi implementada, mas fica desativada por padrão.</desc>
+  <style>
+    .font { font-family: Segoe UI, Arial, sans-serif; }
+    .title { fill: #f5f9ff; font-size: 31px; font-weight: 700; }
+    .subtitle { fill: #a9bbd5; font-size: 17px; }
+    .section { fill: #7cddce; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+    .card-title { fill: #f5f9ff; font-size: 21px; font-weight: 700; }
+    .body { fill: #c5d3e7; font-size: 16px; }
+    .muted { fill: #9db2ce; font-size: 15px; }
+    .note { fill: #acc2d9; font-size: 14px; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#9bb0cc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="data-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#59d8c9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="800" fill="#091323"/>
+  <rect x="48" y="39" width="43" height="43" rx="12" fill="#59d8c9"/>
+  <path d="M60 60 L69 69 L80 51" fill="none" stroke="#0b2730" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="font title" x="109" y="69">GroundedOps</text>
+  <text class="font subtitle" x="109" y="99">Copiloto de engenharia e incidentes baseado em evidências</text>
+  <rect x="1098" y="43" width="254" height="55" rx="14" fill="#153b3f" stroke="#4caaa4"/>
+  <circle cx="1120" cy="62" r="6" fill="#59d8c9"/>
+  <text class="font" x="1134" y="67" fill="#ddfaf5" font-size="14" font-weight="700">FLUXO LOCAL VALIDADO</text>
+  <text class="font" x="1117" y="87" fill="#aad6d1" font-size="13">AWS Pilot não implantado</text>
+
+  <rect x="48" y="132" width="1304" height="241" rx="22" fill="#101e34" stroke="#2d4361" stroke-width="1.5"/>
+  <text class="font section" x="72" y="170">01 / INGESTÃO E INDEXAÇÃO</text>
+  <text class="font note" x="1170" y="170">assíncrono</text>
+
+  <rect x="72" y="195" width="242" height="151" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <circle cx="96" cy="221" r="7" fill="#8faaff"/>
+  <text class="font card-title" x="112" y="229">Fontes</text>
+  <text class="font body" x="94" y="270">Markdown + GitHub</text>
+  <text class="font muted" x="94" y="299">Runbooks, ADRs, incidentes</text>
+  <text class="font muted" x="94" y="325">e docs versionados</text>
+
+  <path d="M315 270 H355" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="360" y="195" width="242" height="151" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <circle cx="384" cy="221" r="7" fill="#f4c77b"/>
+  <text class="font card-title" x="400" y="229">Worker de ingestão</text>
+  <text class="font body" x="382" y="270">Leitura + chunks estruturais</text>
+  <text class="font muted" x="382" y="299">Jobs idempotentes</text>
+  <text class="font muted" x="382" y="325">Redis + retentativas</text>
+
+  <path d="M603 270 H643" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="648" y="195" width="355" height="151" rx="16" fill="#16363b" stroke="#4ba99f" stroke-width="1.5"/>
+  <circle cx="672" cy="221" r="7" fill="#59d8c9"/>
+  <text class="font card-title" x="688" y="229">Fontes autoritativas</text>
+  <text class="font body" x="670" y="270">PostgreSQL</text>
+  <text class="font muted" x="785" y="270">versões, ACLs, jobs, auditoria</text>
+  <line x1="670" y1="286" x2="980" y2="286" stroke="#37666b"/>
+  <text class="font body" x="670" y="314">Armaz. de objetos</text>
+  <text class="font muted" x="831" y="314">artefatos imutáveis</text>
+  <text class="font" x="670" y="335" fill="#90d6cc" font-size="13">Fonte da verdade para replay e recuperação</text>
+
+  <path d="M1004 270 H1044" fill="none" stroke="#59d8c9" stroke-width="2.5" marker-end="url(#data-arrow)"/>
+  <rect x="1049" y="195" width="280" height="151" rx="16" fill="#193147" stroke="#4d8bae" stroke-width="1.5"/>
+  <circle cx="1073" cy="221" r="7" fill="#70bde3"/>
+  <text class="font card-title" x="1089" y="229">OpenSearch</text>
+  <text class="font body" x="1071" y="270">Índice BM25 versionado</text>
+  <text class="font muted" x="1071" y="299">Alias atual + trechos exatos</text>
+  <text class="font muted" x="1071" y="325">Projeção reconstruível</text>
+
+  <path d="M1190 347 V399 H698 V499" fill="none" stroke="#59d8c9" stroke-width="2.5" marker-end="url(#data-arrow)"/>
+  <rect x="889" y="386" width="104" height="26" rx="13" fill="#0d2733" stroke="#478d90"/>
+  <text class="font" x="908" y="404" fill="#9be8dc" font-size="13">consultas</text>
+
+  <rect x="48" y="423" width="1304" height="294" rx="22" fill="#101e34" stroke="#2d4361" stroke-width="1.5"/>
+  <text class="font section" x="72" y="462" fill="#9bafff">02 / RESPOSTAS COM EVIDÊNCIAS</text>
+  <text class="font note" x="1230" y="462">rota Ask</text>
+
+  <rect x="72" y="499" width="218" height="171" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <text class="font card-title" x="94" y="538">Cliente web</text>
+  <text class="font body" x="94" y="570">Next.js</text>
+  <text class="font muted" x="94" y="600">Sessão JWT HttpOnly</text>
+  <text class="font muted" x="94" y="631">Ask + UI de evidências</text>
+
+  <path d="M291 584 H315" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="320" y="499" width="218" height="171" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <text class="font card-title" x="342" y="538">API + políticas</text>
+  <text class="font body" x="342" y="570">FastAPI</text>
+  <text class="font muted" x="342" y="600">JWT + ACL por tenant</text>
+  <text class="font muted" x="342" y="631">Autorização primeiro</text>
+
+  <path d="M539 584 H563" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="568" y="499" width="218" height="171" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <text class="font card-title" x="590" y="538">Recuperação</text>
+  <text class="font body" x="590" y="570">Baseline BM25</text>
+  <text class="font muted" x="590" y="600">Evidências autorizadas</text>
+  <text class="font muted" x="590" y="631">Trechos versionados</text>
+
+  <path d="M787 584 H811" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="816" y="499" width="218" height="171" rx="16" fill="#192b44" stroke="#415776" stroke-width="1.5"/>
+  <text class="font card-title" x="838" y="538">Geração</text>
+  <text class="font body" x="838" y="570">OpenAI Responses</text>
+  <text class="font muted" x="838" y="600">Contexto delimitado</text>
+  <text class="font muted" x="838" y="631">Rascunho não verificado</text>
+
+  <path d="M1035 584 H1059" fill="none" stroke="#9bb0cc" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <rect x="1064" y="499" width="265" height="171" rx="16" fill="#253448" stroke="#cba56f" stroke-width="1.5"/>
+  <text class="font card-title" x="1086" y="538">Verificação</text>
+  <text class="font body" x="1086" y="570">Citações exatas</text>
+  <text class="font muted" x="1086" y="600">Resposta + fontes verificadas</text>
+  <text class="font muted" x="1086" y="631">ou abstenção por evidências</text>
+
+  <rect x="48" y="740" width="835" height="47" rx="14" fill="#14263c" stroke="#36536d"/>
+  <text class="font" x="68" y="769" fill="#d7e5f4" font-size="15">CONTROLES  ·  auditoria sem dados sensíveis  ·  OpenTelemetry  ·  gates  ·  recuperação</text>
+  <rect x="902" y="740" width="450" height="47" rx="14" fill="#241e36" stroke="#a48bc9" stroke-dasharray="7 5"/>
+  <text class="font" x="922" y="769" fill="#e4d7f5" font-size="15">INVESTIGATE  ·  delimitado, desativado pelo custo</text>
+</svg>
